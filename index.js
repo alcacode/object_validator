@@ -25,18 +25,14 @@ function isArrayLike(val) {
         Array.prototype[Symbol.iterator] === val[Symbol.iterator] ||
         isWellFormedIterator(val[Symbol.iterator]);
 }
-function isCoercable(rule) {
-    switch (rule.type) {
-        case 'bigint':
-        case 'boolean':
-        case 'number':
-        case 'string':
-            return true;
-    }
-    return false;
+function shouldCoerceType(rule) {
+    return rule.coerceType === true &&
+        (rule.type === 'number' || rule.type === 'boolean' ||
+            rule.type === 'string' || rule.type === 'bigint');
 }
 function isConstructor(arg) {
-    return arg instanceof Object && typeof arg.constructor === 'function';
+    return arg instanceof Object &&
+        typeof arg.constructor === 'function';
 }
 function ToNumber(val) {
     if (typeof val === 'number')
@@ -53,7 +49,8 @@ function coerceType(value, toType) {
         try {
             v = BigInt(ToNumber(value));
         }
-        catch (err) { }
+        catch (err) {
+        }
         return v;
     }
     if (toType === 'boolean')
@@ -476,7 +473,7 @@ function normalizeObject(schema, obj, options) {
             continue;
         }
         let value = obj[k];
-        if (isCoercable(rule) && !__skip_type_check)
+        if (shouldCoerceType(rule) && !__skip_type_check)
             value = coerceType(value, rule.type);
         if (rule.type !== typeof value && !__skip_type_check &&
             rule.onWrongType instanceof Function)

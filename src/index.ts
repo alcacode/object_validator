@@ -726,7 +726,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 
 export function
 	validateObject<S extends Schema, P extends {[k in keyof S]?: any} = any>(
-		schema: Schema<S>, obj?: P, options?: Options)
+		schema: Schema<S>, obj?: P, options?: Options): boolean
 {
 	var res;
 	try {

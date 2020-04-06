@@ -1,0 +1,31 @@
+{
+        "compilerOptions": {
+                "target": "es2018",
+                "baseUrl": "/",
+                "module": "commonjs",
+                "esModuleInterop": true,
+                "sourceMap": false,
+                "noImplicitAny": true,
+                "removeComments": true,
+                "alwaysStrict": true,
+                "outDir": ".",
+                "strict": true,
+                "noUnusedLocals": true,
+                "lib": [
+                        "ESNext",
+                        "DOM"
+                ],
+                "rootDir": "src/",
+                "stripInternal": true
+        },
+        "include": [
+                "./src/**/*"
+        ],
+        "exclude": [
+                ".vscode",
+                ".gitignore",
+                "package-lock.json",
+                "*.code-workspace",
+                "node_modules"
+        ]
+}

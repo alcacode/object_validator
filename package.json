@@ -23,6 +23,6 @@
   ],
   "author": "alcacode",
   "license": "GPL-2.0-only",
-  "types": "./src/@types/option_checker/index.d.ts",
+  "types": "./src/@types/object_validator/index.d.ts",
   "private": true
 }

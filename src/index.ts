@@ -13,7 +13,8 @@ import {
 	Options,
 	typeRetVal,
 	CoercableOptionRuleType,
-	CoercableTypes
+	CoercableTypes,
+	OptCoerceType
 } from 'object_validator';
 
 const MAX_REFERENCE_DEPTH = 16;
@@ -52,44 +53,40 @@ function isArrayLike<T extends ArrayLike<any>>(val: T): val is T
 	       isWellFormedIterator(val[Symbol.iterator]);
 }
 
-function isCoercable(rule: OptionRule): rule is CoercableOptionRuleType
-{
-	switch (rule.type) {
-	case 'bigint':
-	case 'boolean':
-	case 'number':
-	case 'string':
-		return true;
+function shouldCoerceType(rule: OptionRule&OptCoerceType): rule is CoercableOptionRuleType {
+	return rule.coerceType === true &&
+		(rule.type === 'number' || rule.type === 'boolean' ||
+		 rule.type === 'string' || rule.type === 'bigint');
+}
+
+function isConstructor(arg: any):
+	arg is new (...args: any[]) => any {
+		return arg instanceof Object &&
+		       typeof arg.constructor === 'function';
 	}
 
-	return false;
-}
+function ToNumber(val: any):
+	number {
+		if (typeof val === 'number')
+			return val;
 
-function isConstructor(arg: any): arg is new (...args: any[]) => any
-{
-	return arg instanceof Object && typeof arg.constructor === 'function';
-}
+		if (typeof val === 'bigint')
+			return Number(val);
 
-function ToNumber(val: any): number {
-	if (typeof val === 'number')
-		return val;
+		// Converting a Symbol to Number is not allowed.
+		if (typeof val === 'symbol')
+			return NaN;
 
-	if (typeof val === 'bigint')
-		return Number(val);
-
-	// Converting a Symbol to Number is not allowed.
-	if (typeof val === 'symbol')
-		return NaN;
-
-	return +val;
-}
+		return +val;
+	}
 
 function coerceType(value: any, toType: CoercableTypes) {
 	if (toType === 'bigint') {
 		let v: BigInt | null = null;
 		try {
 			v = BigInt(ToNumber(value));
-		} catch(err) { /* Intentionally left empty. */}
+		} catch(err) { /* Intentionally left empty. */
+		}
 
 		return v;
 	}
@@ -109,7 +106,7 @@ function coerceType(value: any, toType: CoercableTypes) {
 	}
 
 	throw TypeError("invalid destination type");
-} 
+}
 
 function getSpecies<T extends any>(O: T): (new (...args: any[]) => any)|
 	undefined
@@ -630,7 +627,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 
 		let value = obj[k];
 
-		if (isCoercable(rule) && !__skip_type_check)
+		if (shouldCoerceType(rule) && !__skip_type_check)
 			value = coerceType(value, rule.type);
 
 		if (rule.type !== typeof value && !__skip_type_check &&

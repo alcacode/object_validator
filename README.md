@@ -47,7 +47,8 @@ const mySchema = {
 }
 
 // Just validate.
-validateObject(obj, mySchema, options);
+if (validateObject(obj, mySchema, options))
+  console.log("Object is valid!");
 
 // Validate and return a normalized object.
 const normalized = normalizeObject(obj, mySchema, options);
@@ -500,6 +501,10 @@ Normalized object. Contains options with valid values or its default value if on
 In this example, the option `num` must be a `Number` greater than or equal to `0` and it must not be `NaN`. If it fails any of those tests, or is missing, it will still appear in the parsed options object, but with its default value of `3`. The option `name` **must** be present and it **must** be valid (`String` whose `length` is greater than or equal to `1`) or an exception will be raised due to `required` being `true`.
 
 ## `validateObject(schema[,obj][, options])`
+
+Returns `true` if the provided object `obj` conforms with `schema`, `false` otherwise.
+
+Note: `validateObject` uses `normalizeObject` internally. It is therefore **a mistake** to first call `validateObject` followed by `normalizeObject` with the same arguments, instead just call `normalizeObject` (in a `try...catch`-statement if necessary).
 
 ### Parameters
 

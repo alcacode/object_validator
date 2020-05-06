@@ -28,6 +28,9 @@ declare module 'object_validator' {
 
                 /** If `true`, expect test to throw an exception. */
                 shouldThrow?: boolean;
+
+                /** Override the default property key with this. */
+                propKey?: PropertyKey;
         }
 
         export interface TestConfig {

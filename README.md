@@ -310,6 +310,25 @@ Optional. If `true` and `passTest()` is present, instead of the entire value bei
 
 Note: This creates a new object of the same type as the option value is created **by calling its constructor**. Do not use this option if you do not know what that constructor does.
 
+### `ObjectSchema.allowInherited`
+
+- <`boolean`>
+
+If `true`, extends property search to include the input object's prototype chain.
+
+#### Example
+
+```js
+const schema = {
+    hasOwnProperty: {
+    type: 'function',
+    allowInherited: true
+  }
+};
+
+normalizeObject(schema, {}); // { hasOwnProperty: [Function: hasOwnProperty] }
+```
+
 ### `ObjectSchema.onWrongType(value)`
 
 - `this` <`undefined`>

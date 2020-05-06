@@ -136,9 +136,10 @@ for (const ck in tests) {
 	console.groupCollapsed(centerAndPad(` ${ck.toUpperCase()} `, '='));
 
 	for (const tk in tests[ck]) {
+		const pKey = (tests[ck][tk].propKey || tk) as string;
 		const t = tests[ck][tk];
 		const decl: Schema = {
-			[tk]: t.decl,
+			[pKey]: t.decl,
 			__numRefTarget: {
 				type: 'number',
 				min: 1,
@@ -149,44 +150,44 @@ for (const ck in tests) {
 				macro: '__numRefTarget'
 			},
 			__selfMacro: {
-				macro: tk
+				macro: pKey
 			},
 			__selfReference: {
 				type: t.decl.type!,
-				extends: tk,
+				extends: pKey,
 				required: false
 			},
 		};
 		const expect = t.shouldFail || t.shouldThrow ?
 				       undefined :
 				       'expect' in t ? t.expect : t.arg;
-		const opts: { [x: string]: any } = {};
+		const inputObj: { [x: string]: any } = {};
 
 		if ('arg' in t)
-			opts[tk] = t.arg;
+			inputObj[pKey] = t.arg;
 
-		let descStr = (t.description || tk).substring(0, 48);
+		let descStr = (t.description || pKey).substring(0, 48);
 		if (t.description && t.description.length >= 48)
 			descStr += '…'; // <- One character.
 
-		let res: Schema<any> = {};
+		let res: Schema<any> = Object.create(null);
 		let didParse = false;
 		let errMsg: string = '';
 
 		// parseOptions might throw if 'required' is set.
 		try {
-			res = normalizeObject(decl, opts, O);
+			res = normalizeObject(decl, inputObj, O);
 			didParse = true;
 		} catch (err) {
 			errMsg = err instanceof Error ?
-					 (VERBOSE_OUTPUT && err.stack ?
+					 (LOG_ERROR_STACK && err.stack ?
 						  err.stack :
 						  err.message) :
 					 'unknown error';
 		}
 
-		const propKey = (decl[tk].macro ?? decl[tk].mapTo) ?? tk;
-		const gotExpected = areObjectsSimilar(res[propKey], expect);
+		const propKey = ((decl[pKey].macro ?? decl[pKey].mapTo) ?? pKey) as string;
+		const gotExpected = partiallyEQ(res[propKey], expect);
 		let didPass = didParse && gotExpected;
 
 		if (t.shouldThrow)
@@ -199,23 +200,24 @@ for (const ck in tests) {
 
 		if (!didPass || EXPAND_ALL) {
 			console.log(`\n> ${descStr.padEnd(46, ' ')} [%c${didPass ? 'PASSED' : 'FAILED'}]`, `color:${didPass ? 'green' : 'red'};font-weight:600;`);
-			console.log('Input:        ', ('arg' in t ? t.arg : '<no argument>'));
-			console.log('Output:       ', didParse ? res[propKey] : '<no return value>');
-			console.log('Output Key:   ', didParse ? propKey : '<no return value>');
-			console.log('Expected:     ', t.shouldThrow ? 'N/A' : expect);
-			console.log('Should Fail:  ', t.shouldFail ? 'Yes' : 'No');
-			console.log('Should Throw: ', t.shouldThrow ? 'Yes' : 'No');
+			console.log('Input:          ', (inputObj ? inputObj : '<no argument>'));
+			console.log('Output:         ', didParse ? res[propKey] : '<no return value>');
+			console.log('Property Key:   ', didParse ? propKey : '<no return value>');
+			console.log('Expected Value: ', t.shouldThrow ? 'N/A' : expect ? expect : '<no return value>');
+			console.log('Should Fail:    ', t.shouldFail ? 'Yes' : 'No');
+			console.log('Should Throw:   ', t.shouldThrow ? 'Yes' : 'No');
 
 			if (didParse)
-				console.log('Full Output:  ', res);
+				console.log('Full Output:    ', res);
 
-			let resStr = `Result:       %c${didPass ? 'PASSED' : 'FAILED'}%c`;
+			let resStr = `Result:          %c${didPass ? 'PASSED' : 'FAILED'}%c`;
 			if (!didParse)
 				resStr += `, exception${errMsg ? ` %c(${errMsg})` : ''}`;
 			else if (!(propKey in res))
 				resStr += ', option discarded';
 			else if (!gotExpected)
-				resStr += `, unexpected value`;
+				resStr += `, unexpected value. Expected ${t.expect ? t.expect : 'no return value'}, got ${res[propKey] ? t.expect : 'no return value'}.`;
+
 			console.log(resStr + '\n', `color:${didPass ? 'green' : 'red'};font-weight:600;`, '', '');
 		} else {
 			console.log(`${descStr.padEnd(48, ' ')} [PASSED]`);
@@ -227,6 +229,4 @@ for (const ck in tests) {
 
 const totalRes = resCount[0] + resCount[1];
 console.log(`Passed: ${resCount[0]} / ${totalRes}`);
-console.log(`Failed: ${resCount[1]} / ${totalRes}`);
-
-console.log(`Final result: ${resCount[0] === totalRes ? 'PASS' : 'FAIL'}`);
+console.log(`\nFinal result: ${resCount[0] === totalRes ? 'PASS' : 'FAIL'}`);

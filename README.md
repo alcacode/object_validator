@@ -75,12 +75,13 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
       - [ArrayLike](#arraylike)
   - [The `Options` Object](#the-options-object)
     - [`Options.allowOverride`](#optionsallowoverride)
+    - [`Options.printWarnings`](#optionsprintwarnings)
+    - [`Options.noReturnValuePrototype`](#optionsnoreturnvalueprototype)
     - [`Options.throwOnCircularReference`](#optionsthrowoncircularreference)
       - [Example](#example)
     - [`Options.throwOnReferenceError`](#optionsthrowonreferenceerror)
     - [`Options.throwOnUnrecognized`](#optionsthrowonunrecognized)
     - [`Options.throwOnInvalid`](#optionsthrowoninvalid)
-    - [`Options.printWarnings`](#optionsprintwarnings)
   - [The `ObjectSchema` Object](#the-objectschema-object)
     - [**`ObjectSchema.type`**](#objectschematype)
     - [`ObjectSchema.required`](#objectschemarequired)
@@ -91,6 +92,8 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
       - [Returns](#returns)
     - [`ObjectSchema.testFullValue`](#objectschematestfullvalue)
     - [`ObjectSchema.allowPartialPass`](#objectschemaallowpartialpass)
+    - [`ObjectSchema.allowInherited`](#objectschemaallowinherited)
+      - [Example](#example-1)
     - [`ObjectSchema.onWrongType(value)`](#objectschemaonwrongtypevalue)
     - [`ObjectSchema.transformFn(value)`](#objectschematransformfnvalue)
     - [`ObjectSchema.maxLength`](#objectschemamaxlength)
@@ -110,12 +113,12 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
     - [`ObjectSchema.mapTo`](#objectschemamapto)
     - [`ObjectSchema.macro`](#objectschemamacro)
     - [`ObjectSchema.extends`](#objectschemaextends)
-      - [Example](#example-1)
+      - [Example](#example-2)
   - [`normalizeObject(schema[,obj][, options])`](#normalizeobjectschemaobj)
     - [Parameters](#parameters)
     - [Returns](#returns-1)
     - [Exceptions](#exceptions)
-    - [Example](#example-2)
+    - [Example](#example-3)
   - [`validateObject(schema[,obj][, options])`](#validateobjectschemaobj)
     - [Parameters](#parameters-1)
     - [Returns](#returns-2)
@@ -173,7 +176,13 @@ The options declaration object is used to declare the requirements of applicable
 
 - <`boolean`>
 
-Optional. Overrides the default value of `allowOverride`. Does _not_ override individually set `allowOverride`. Default: `true`.
+Overrides the default value of `allowOverride`. Does _not_ override individually set `allowOverride`. Default: `true`.
+
+### `Options.printWarnings`
+
+- <`boolean`>
+
+If `true`, a warning message will be emitted when reference errors or circular references are found. Default: `true`.
 
 ### `Options.noReturnValuePrototype`
 
@@ -187,7 +196,9 @@ Default: `true`.
 
 - <`boolean`>
 
-Optional. If `true`, throw an exception if any rule contains circular references. Default: `false`.
+If `true`, throw an exception if any rule contains circular references.
+
+Default: `false`.
 
 #### Example
 
@@ -212,25 +223,25 @@ Resolving any of the above rules is impossible, because their reference chain co
 
 - <`boolean`>
 
-Optional. If `true`, throw a `ReferenceError` if a rule contains references to non-existent rules. Default: `false`.
+If `true`, throw a `ReferenceError` if a rule contains references to non-existent rules.
+
+Default: `false`.
 
 ### `Options.throwOnUnrecognized`
 
 - <`boolean`>
 
-Optional. If `true`, throw an exception if any undeclared properties exist on the input object. Default: `false`.
+If `true`, throw an exception if any undeclared properties exist on the input object.
+
+Default: `false`.
 
 ### `Options.throwOnInvalid`
 
 - <`boolean`>
 
-Optional. If `true`, throw an exception if the input object contain _any_ invalid values. Default: `false`.
+If `true`, throw an exception if the input object contain _any_ invalid values.
 
-### `Options.printWarnings`
-
-- <`boolean`>
-
-Optional. If `true`, a warning message will be emitted when reference errors or circular references are found. Default: `true`.
+Default: `false`.
 
 ## The `ObjectSchema` Object
 
@@ -248,19 +259,19 @@ Note: Although the option value is tested against the specified type, there are 
 
 - <`boolean`>
 
-Optional. If `true` an exception will be thrown if the option is missing or its value is invalid.
+If `true` an exception will be thrown if the option is missing or its value is invalid.
 
 ### `ObjectSchema.allowOverride`
 
 - <`boolean`>
 
-Optional. If `true`, a mapped option may overwrite the option it is mapped to (the last valid value is used). If `false`, a mapped option will only used when the option it is mapped to is either missing or invalid. Defaults to the value of the global `allowOverride`.
+If `true`, a mapped option may overwrite the option it is mapped to (the last valid value is used). If `false`, a mapped option will only used when the option it is mapped to is either missing or invalid. Defaults to the value of the global `allowOverride`.
 
 ### `ObjectSchema.defaultValue`
 
 - <`any`>
 
-Optional. Value to use if option is missing or its value is invalid. If set, that option is guaranteed to exist in the parsed options object.
+Value to use if option is missing or its value is invalid. If set, that option is guaranteed to exist in the parsed options object.
 
 Note: If `required` is `true` this value is effectively ignored.
 
@@ -268,7 +279,7 @@ Note: If `required` is `true` this value is effectively ignored.
 
 - <`RegExp`>
 
-Optional. Test input value against pattern. If `pattern` is a string value, the following special tokens can be used (case sensitive):
+Test input value against pattern. If `pattern` is a string value, the following special tokens can be used (case sensitive):
 
 - `*` Wildcard, matches anything.
 - `%d` Matches any number, including the fractional part. Only period/full stop decimal points are supported.
@@ -285,7 +296,7 @@ Note: Special token generation can be prevented by escaping the character.
 
 ### `ObjectSchema.passTest(value)`
 
-Optional. Function used to test option value.
+Function used to test option value.
 
 - `this` <`undefined`>
 - `value` <`any`> Value of the option currently being evaluated or its member items if an `@@iterator` method is present.
@@ -300,13 +311,13 @@ Optional. Function used to test option value.
 
 - <`boolean`>
 
-Optional. Passes the entire option value to `passTest()` even if an `@@iterator` method is present. Does nothing if `passTest()` is not present.
+Passes the entire option value to `passTest()` even if an `@@iterator` method is present. Does nothing if `passTest()` is not present.
 
 ### `ObjectSchema.allowPartialPass`
 
 - <`boolean`>
 
-Optional. If `true` and `passTest()` is present, instead of the entire value being discarded only the failing property will be discarded.
+If `true` and `passTest()` is present, instead of the entire value being discarded only the failing property will be discarded.
 
 Note: This creates a new object of the same type as the option value is created **by calling its constructor**. Do not use this option if you do not know what that constructor does.
 
@@ -334,14 +345,14 @@ normalizeObject(schema, {}); // { hasOwnProperty: [Function: hasOwnProperty] }
 - `this` <`undefined`>
 - `value` <`any`> Value of the option currently being evaluated.
 
-Optional. Function called **if** type check fails, replacing the current option value and continuing evaluation. If not present, a type mismatch will instead dismiss the option. Called before final type check.
+Function called **if** type check fails, replacing the current option value and continuing evaluation. If not present, a type mismatch will instead dismiss the option. Called before final type check.
 
 ### `ObjectSchema.transformFn(value)`
 
 - `this` <`undefined`>
 - `value` <`any`> Value of the option currently being evaluated.
 
-Optional. Transformation function whose return value replaces the current option value. This can be used to cast values to more appropriate types or formats. Called before final type check.
+Transformation function whose return value replaces the current option value. This can be used to cast values to more appropriate types or formats. Called before final type check.
 
 Note: This function is called after `onWrongType()`.
 
@@ -351,13 +362,13 @@ Note: This function is called after `onWrongType()`.
 
 - <`number`>
 
-Optional. Only applies where `type` is `'string'`, `'object'`, `'function'`, or `'array'`. Discard the option if its `length` property is greater than `maxLength`, less than `minLength`, or if no numeric `length` property is present.
+Only applies where `type` is `'string'`, `'object'`, `'function'`, or `'array'`. Discard the option if its `length` property is greater than `maxLength`, less than `minLength`, or if no numeric `length` property is present.
 
 ### `ObjectSchema.instance`
 
 - <`object`> | <`Function`>
 
-Optional. Only applies where `type` is `'object'` or `'function'`. Discard option if value is not an instance of `instance`.
+Only applies where `type` is `'object'` or `'function'`. Discard option if value is not an instance of `instance`.
 
 ### `ObjectSchema.max`
 
@@ -365,31 +376,31 @@ Optional. Only applies where `type` is `'object'` or `'function'`. Discard optio
 
 - <`number`>
 
-Optional. Only applies where `type` is `'number'` or `'bigint'`. Discard values greater than `max` and/or less than `min`.
+Only applies where `type` is `'number'` or `'bigint'`. Discard values greater than `max` and/or less than `min`.
 
 ### `ObjectSchema.notFloat`
 
 - <`boolean`>
 
-Optional. Only applies where `type` is `'number'`. Discard non-integer values.
+Only applies where `type` is `'number'`. Discard non-integer values.
 
 ### `ObjectSchema.notNaN`
 
 - <`boolean`>
 
-Optional. Only applies where `type` is `'number'`. Discard `NaN` values.
+Only applies where `type` is `'number'`. Discard `NaN` values.
 
 ### `ObjectSchema.notInfinite`
 
 - <`boolean`>
 
-Optional. Only applies where `type` is `'number'`. Discard non-finite values (`Infinity`).
+Only applies where `type` is `'number'`. Discard non-finite values (`Infinity`).
 
 ### `ObjectSchema.coerceType`
 
 - <`boolean`>
 
-Optional. Only applies where `type` is `'bigint'`, `'boolean'`, `'number'`, or `'string'`. If `true`, attempt to convert option value to the one specified in `type`. Type coercion is performed before the final type check.
+Only applies where `type` is `'bigint'`, `'boolean'`, `'number'`, or `'string'`. If `true`, attempt to convert option value to the one specified in `type`. Type coercion is performed before the final type check.
 
 #### Conversion to `bigint`
 
@@ -413,7 +424,7 @@ Note: This occurs _before_ `onWrongType()` and `transformFn()` are called.
 
 - <`boolean`>
 
-Optional. If `true`, remove any gaps resulting from a partial pass. Instances of `Array` and `TypedArray` are considered array-like.
+If `true`, remove any gaps resulting from a partial pass. Instances of `Array` and `TypedArray` are considered array-like.
 
 Note: Has no effect if `allowPartialPass` is not `true`.
 
@@ -421,19 +432,19 @@ Note: Has no effect if `allowPartialPass` is not `true`.
 
 - <`string`>
 
-Optional. Map option to a different property key in the output object.
+Map option to a different property key in the output object.
 
 ### `ObjectSchema.macro`
 
 - <`string`>
 
-Optional. Use the rules of another option and map output accordingly. _All_ other options are discarded if set. If the referenced rule does not exist or forms a circular reference, a warning will be printed and the option will be discarded.
+Use the rules of another option and map output accordingly. _All_ other options are discarded if set. If the referenced rule does not exist or forms a circular reference, a warning will be printed and the option will be discarded.
 
 ### `ObjectSchema.extends`
 
 - <`string`>
 
-Optional. Inherit rules from another rule. Settings defined on the extending rule take precedence over inherited rules. If the referenced rule does not exist or forms a circular reference, a warning will be printed and the option will be discarded.
+Inherit rules from another rule. Settings defined on the extending rule take precedence over inherited rules. If the referenced rule does not exist or forms a circular reference, a warning will be printed and the option will be discarded.
 
 #### Example
 
@@ -496,6 +507,8 @@ Object to validate.
 
 Normalized object. Contains options with valid values or its default value if one was defined in `ObjectSchema.defaultValue`.
 
+Note: By default, the returned `Object` has `null` as its prototype. See [`noReturnValuePrototype`](#optionsnoreturnvalueprototype) for information on how to adjust this behavior.
+
 ### Exceptions
 
 - <`Error`> If `throwOnCircularError` is `true` and a macro rule or rule reference forms a circular reference.
@@ -530,7 +543,7 @@ In this example, the option `num` must be a `Number` greater than or equal to `0
 
 Returns `true` if the provided object `obj` conforms with `schema`, `false` otherwise.
 
-Note: `validateObject` uses `normalizeObject` internally. It is therefore **a mistake** to first call `validateObject` followed by `normalizeObject` with the same arguments, instead just call `normalizeObject` (in a `try...catch`-statement if necessary).
+Note: `validateObject` uses `normalizeObject` internally. It is therefore a **mistake** to first call `validateObject` followed by `normalizeObject` with the same arguments, instead just call `normalizeObject` (in a `try...catch`-statement if necessary).
 
 ### Parameters
 

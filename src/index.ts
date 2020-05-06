@@ -567,6 +567,7 @@ const OptionsPrototype: Required<Options> = {
 	allowOverride           : true,
 	printWarnings           : true,
 	noReturnValuePrototype  : true,
+	skipSchemaExpansion	: false,
 	throwOnCircularReference: false,
 	throwOnInvalid          : false,
 	throwOnReferenceError   : false,
@@ -595,13 +596,17 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 		}
 	}
 
-	const _schema = expandSchema<S>(schema, opts);
+	let _schema: Schema;
+	if (opts.skipSchemaExpansion === true)
+		_schema = schema;
+	else
+		_schema = expandSchema<S>(schema, opts);
 
 	// Mapped options and macros need to go first
 	// so that they do not take precedence.
-	const declKeys = Object.keys(_schema)
-				 .sort((a, b) => (_schema[a].mapTo || _schema[a].macro ? -1 : 0) -
-						 (_schema[b].mapTo || _schema[b].macro ? -1 : 0));
+	const declKeys = Object.keys(_schema).sort(
+		(a, b) => (_schema[a].mapTo || _schema[a].macro ? -1 : 0) -
+			  (_schema[b].mapTo || _schema[b].macro ? -1 : 0));
 
 	for (const k of declKeys) {
 		let rule = _schema[k];
@@ -769,4 +774,18 @@ export function
 	}
 
 	return !!res;
+}
+
+export function createNormalizer<S extends Schema, P extends { [k in keyof S]?: any }>(schema: S, options?: Options): (obj?: P) => ReturnType<typeof normalizeObject> {
+	const _options = Object.assign({}, options, { skipSchemaExpansion: true });
+	const _schema  = expandSchema(schema, _options);
+
+	return (obj?: P) => normalizeObject(_schema, obj, _options);
+}
+
+export function createValidator<S extends Schema, P extends { [k in keyof S]?: any }>(schema: S, options?: Options): (obj?: P) => ReturnType<typeof validateObject> {
+	const _options = Object.assign({}, options, { skipSchemaExpansion: true });
+	const _schema  = expandSchema(schema, _options);
+
+	return (obj?: P) => validateObject(_schema, obj, _options);
 }

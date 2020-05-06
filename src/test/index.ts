@@ -45,19 +45,33 @@ function getPrototype<T extends any>(obj: T)
 	return undefined;
 }
 
+function isObject(arg: any): arg is object
+{
+	return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
+}
+
 /**
  * Returns `true` if two objects `a` and `b`, contain identical sets of
  * properties and values therein.
  */
-function areObjectsSimilar(a: any, b: any): boolean
+function partiallyEQ(a: any, b: any): boolean
 {
-	if (a === b)
+	if (a === b || (Number.isNaN(a) && Number.isNaN(b)))
 		return true;
 
-	if (typeof a !== typeof b)
+	if (typeof a !== typeof b || (a === null && b !== null) || (a !== null && b === null))
 		return false;
 
-	if (getPrototype(a) !== getPrototype(b))
+	if ((a === null && b === undefined) || (a === undefined && b === null))
+		return false;
+
+	const aProto = getPrototype(a);
+	const bProto = getPrototype(b);
+
+	// Treat null-prototype objects as ordinary object literals.
+	if (isObject(a) && isObject(b) && !(aProto === bProto || (aProto === null && bProto === Object) || (bProto === null && aProto === Object)))
+		return false;
+	if (aProto !== bProto)
 		return false;
 
 	const aProps = Object.getOwnPropertyDescriptors(a);

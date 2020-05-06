@@ -77,6 +77,7 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
     - [`Options.allowOverride`](#optionsallowoverride)
     - [`Options.printWarnings`](#optionsprintwarnings)
     - [`Options.noReturnValuePrototype`](#optionsnoreturnvalueprototype)
+    - [`Options.skipSchemaExpansion`](#optionsskipschemaexpansion)
     - [`Options.throwOnCircularReference`](#optionsthrowoncircularreference)
       - [Example](#example)
     - [`Options.throwOnReferenceError`](#optionsthrowonreferenceerror)
@@ -123,6 +124,10 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
     - [Parameters](#parameters-1)
     - [Returns](#returns-2)
     - [Exceptions](#exceptions-1)
+  - [`createNormalizer(schema[,options])`](#createnormalizerschemaoptions)
+    - [Returns](#returns-3)
+  - [`createValidator(schema[,options])`](#createvalidatorschemaoptions)
+    - [Returns](#returns-4)
 
 ## Option types
 
@@ -191,6 +196,14 @@ If `true`, a warning message will be emitted when reference errors or circular r
 If `true`, causes `normalizeObject()` to return a null prototype object, otherwise its prototype will be `Object`.
 
 Default: `true`.
+
+### `Options.skipSchemaExpansion`
+
+- <`boolean`>
+
+If `true`, skips parsing schema with `expandSchema()`. Used internally for `createNormalizer` and `createValidator`.
+
+Default: `false`.
 
 ### `Options.throwOnCircularReference`
 
@@ -574,3 +587,31 @@ Returns `true` if `obj` is valid, `false` otherwise.
 - <`ReferenceError`> If `throwOnReferenceError` is `true` and a rule references a non-existent rule.
 - <`Error`> If `throwOnUnrecognized` is `true` and any undeclared properties exist on the input object.
 - <`Error`> If `throwOnInvalid` is `true` and _any_ value fails to validate.
+
+## `createNormalizer(schema[,options])`
+
+Creates a new function that take an input object as its only argument. When called the input object is passed to `normalizeObject` along with the options it was created with and schema in its expanded form.
+
+- **schema** <`ObjectSchema`>\
+Object describing the structure of valid objects.
+
+- **options** <`Options`>
+Note: `skipSchemaExpansion` is ignored as it is required internally.
+
+### Returns
+
+- <`Function`>
+
+## `createValidator(schema[,options])`
+
+Creates a new function that take an input object as its only argument. When called the input object is passed to `validateObject` along with the options it was created with and schema in its expanded form.
+
+- **schema** <`ObjectSchema`>\
+Object describing the structure of valid objects.
+
+- **options** <`Options`>
+Note: `skipSchemaExpansion` is ignored as it is required internally.
+
+### Returns
+
+- <`Function`>

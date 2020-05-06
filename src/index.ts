@@ -25,12 +25,16 @@ function isObject(arg: any): arg is object
 	return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
 }
 
+function _hasOwnProperty<P extends PropertyKey>(obj: object, p: P): obj is { [k in P]: any } {
+	return Object.prototype.hasOwnProperty.call(obj, p);
+}
+
 function hasProperty<T extends object>(obj: T, prop: PropertyKey, allowInherited?: boolean): prop is keyof T {
 	if (!isObject(obj))
 		return false;
 
 	if (allowInherited !== true)
-		return Object.prototype.hasOwnProperty.call(obj, prop);
+		return _hasOwnProperty(obj, prop);
 
 	return prop in obj;
 }
@@ -39,28 +43,29 @@ function isTypedArray(val: any): val is TypedArrayInstance {
 	return val instanceof Uint8Array.prototype.__proto__.constructor;
 }
 
-function isWellFormedIterator(val: any): val is Iterator<any>
+function isIterable<T extends any, U extends IterableIterator<T>>(val: any): val is U
 {
-	if (!(val instanceof Function))
+	if (!(val[Symbol.iterator] instanceof Function))
 		return false;
 
-	const itr = val();
-	let tmp;
-	if (itr.next instanceof Function && isObject(tmp = itr.next()) &&
-	    typeof tmp.done === 'boolean' && 'value' in tmp)
-		return true;
+	const itr = val[Symbol.iterator]();
+	if (!(itr[Symbol.iterator] instanceof Function))
+		return false;
 
-	return false;
+	let tmp;
+	return isObject(tmp) 		     &&
+	       itr.next instanceof Function  &&
+	       isObject(tmp = itr.next())    &&
+	       typeof tmp.done === 'boolean' &&
+	       _hasOwnProperty(tmp, 'value');
 }
 
-function isArrayLike<T extends ArrayLike<any>>(val: T): val is T
+function isArrayLike<T>(val: any): val is ArrayLike<T>
 {
-	if (!isObject(val) || typeof val.length !== 'number')
+	if (!isObject(val) || !_hasOwnProperty(val, 'length') || typeof val.length !== 'number')
 		return false;
 
-	return Array.isArray(val) || isTypedArray(val) ||
-	       Array.prototype[Symbol.iterator] === val[Symbol.iterator] ||
-	       isWellFormedIterator(val[Symbol.iterator]);
+	return Array.isArray(val) || isTypedArray(val) || isIterable(val);
 }
 
 function shouldCoerceType(rule: OptionRule&OptCoerceType): rule is CoercableOptionRuleType {

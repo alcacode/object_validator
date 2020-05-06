@@ -6,8 +6,16 @@ import {testConfig as tc_arr_like} from './arraylike';
 import {testConfig as tc_num} from './number';
 import type { TestConfig, Schema, Options } from 'object_validator';
 
-/** If `false`, only prints test details for failed tests. */
-const VERBOSE_OUTPUT = false;
+/**
+ * If `true` logs exception error stack (if it exist). If `false` only print
+ * error message thrown by exception.
+ */
+const LOG_ERROR_STACK = false;
+
+/**
+ * If `true`, display verbose output for all tests. If `false`, only display
+ * verbose output for failed tests.
+ */
 const EXPAND_ALL = false;
 const OUTPUT_MAX_LENGTH = 60;
 

@@ -20,7 +20,7 @@ import {
 const MAX_REFERENCE_DEPTH = 16;
 const SIMPLE_PATTERN_REGEX = /^\(([^()]+)(?:\+|\*)(?=\))\)$/;
 
-function isObject(arg: any): arg is object
+function isObject<T extends object>(arg: any): arg is T
 {
 	return arg !== null && (typeof arg === 'object' || arg instanceof Object);
 }
@@ -53,7 +53,8 @@ function isIterable<T extends any, U extends IterableIterator<T>>(val: any): val
 		return false;
 
 	let tmp;
-	return isObject(tmp) 		     &&
+	return isObject<Iterator<any>>(itr)  &&
+	       'next' in itr		     &&
 	       itr.next instanceof Function  &&
 	       isObject(tmp = itr.next())    &&
 	       typeof tmp.done === 'boolean' &&

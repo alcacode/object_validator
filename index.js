@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const MAX_REFERENCE_DEPTH = 16;
 const SIMPLE_PATTERN_REGEX = /^\(([^()]+)(?:\+|\*)(?=\))\)$/;
 function isObject(arg) {
-    return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
+    return arg !== null && (typeof arg === 'object' || arg instanceof Object);
 }
 function _hasOwnProperty(obj, p) {
     return Object.prototype.hasOwnProperty.call(obj, p);
@@ -25,7 +25,8 @@ function isIterable(val) {
     if (!(itr[Symbol.iterator] instanceof Function))
         return false;
     let tmp;
-    return isObject(tmp) &&
+    return isObject(itr) &&
+        'next' in itr &&
         itr.next instanceof Function &&
         isObject(tmp = itr.next()) &&
         typeof tmp.done === 'boolean' &&

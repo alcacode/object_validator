@@ -246,14 +246,14 @@ function handleRuleError(type: RULE_ERROR, opts: Options, ruleName: string, subs
 
 	switch (type) {
 	case RULE_ERROR.UNRECOGNIZED_OPTION:
-		msg = `Option object contains unrecognized option '${ruleName}'`;
+		msg = `Option object contains unrecognized option '${String(ruleName)}'`;
 		if (opts.throwOnUnrecognized === true)
 			errorConst = Error;
 
 		doWarn = false;
 		break;
 	case RULE_ERROR.REFERENCE_ERROR:
-		msg = `Rule '${ruleName}' was discarded because it references non-existent rule '${subst_0}'`;
+		msg = `Rule '${String(ruleName)}' was discarded because it references non-existent rule '${String(subst_0)}'`;
 
 		if (opts.throwOnReferenceError === true)
 			errorConst = ReferenceError;
@@ -261,9 +261,9 @@ function handleRuleError(type: RULE_ERROR, opts: Options, ruleName: string, subs
 		break;
 	case RULE_ERROR.CIRCULAR_REFERENCE:
 		if (ruleName === subst_0)
-			msg = `Rule '${ruleName}' references itself`;
+			msg = `Rule '${String(ruleName)}' references itself`;
 		else
-			msg = `Rule '${ruleName}' forms a circular reference because rule '${subst_0}' references '${subst_1}'`;
+			msg = `Rule '${String(ruleName)}' forms a circular reference because rule '${String(subst_0)}' references '${String(subst_1)}'`;
 
 		if (opts.throwOnCircularReference === true)
 			errorConst = Error;

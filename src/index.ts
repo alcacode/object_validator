@@ -69,26 +69,24 @@ function shouldCoerceType(rule: OptionRule&OptCoerceType): rule is CoercableOpti
 		 rule.type === 'string' || rule.type === 'bigint');
 }
 
-function isConstructor(arg: any):
-	arg is new (...args: any[]) => any {
-		return arg instanceof Object &&
-		       typeof arg.constructor === 'function';
-	}
+function isConstructor(arg: any): arg is new (...args: any[]) => any
+{
+	return arg instanceof Object && typeof arg.constructor === 'function';
+}
 
-function ToNumber(val: any):
-	number {
-		if (typeof val === 'number')
-			return val;
+function ToNumber(val: any): number {
+	if (typeof val === 'number')
+		return val;
 
-		if (typeof val === 'bigint')
-			return Number(val);
+	if (typeof val === 'bigint')
+		return Number(val);
 
-		// Converting a Symbol to Number is not allowed.
-		if (typeof val === 'symbol')
-			return NaN;
+	// Converting a Symbol to Number is not allowed.
+	if (typeof val === 'symbol')
+		return NaN;
 
-		return +val;
-	}
+	return +val;
+}
 
 function coerceType(value: any, toType: CoercableTypes) {
 	if (toType === 'bigint') {
@@ -118,8 +116,7 @@ function coerceType(value: any, toType: CoercableTypes) {
 	throw TypeError("invalid destination type");
 }
 
-function getSpecies<T extends any>(O: T): (new (...args: any[]) => any)|
-	undefined
+function getSpecies<T extends any>(O: T): (new (...args: any) => any) | void
 {
 	if (!isObject(O))
 		return;
@@ -429,16 +426,25 @@ function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(ke
 	return out;
 }
 
+declare type ObjectOf<T> = (
+	{ [key: string]: T } &
+	{ [key: number]: T } &
+	// Workaround for TS insisting that Symbols can't index Objects.
+	/// @ts-ignore
+	{ [key: symbol]: T }
+);
+
 /** Returns the expanded schema based on `schema`. */
-function expandSchema<O extends Schema = {}, K extends string & keyof O = string & keyof O>(schema: O, opts: Options): O
+function expandSchema<T extends Schema = {}, K extends string & keyof T = string & keyof T>(schema: T, opts: Options): T
 {
 	const out = Object.assign(Object.create(null), schema) as Schema;
+	const refs: ObjectOf<K[]> = Object.create(null);
 
 	for (const k of Object.keys(schema) as K[]) {
 		let rule: OptionRule = schema[k];
 
 		if (schema[k].extends && !schema[k].macro) {
-			const opt = resolveReference<O, K>(k, schema, opts);
+			const opt = resolveReference<T, K>(k, schema, opts);
 			if (opt)
 				rule = opt;
 		}
@@ -454,11 +460,12 @@ function expandSchema<O extends Schema = {}, K extends string & keyof O = string
 			if (r !== k && !refs[r].includes(k))
 				refs[r].push(k);
 		} else if (schema[k].mapTo && schema[k].mapTo! in schema) {
-			if (!refs[schema[k].mapTo!])
-				refs[schema[k].mapTo!] = [];
+			const _k = schema[k].mapTo as string;
+			if (!refs[_k])
+				refs[_k] = [];
 
-			if (!refs[schema[k].mapTo!].includes(k))
-				refs[schema[k].mapTo!].push(k);
+			if (!refs[_k].includes(k))
+				refs[_k].push(k);
 		}
 
 		if (typeof out[k].allowOverride !== 'boolean' && !schema[k].macro)
@@ -469,7 +476,7 @@ function expandSchema<O extends Schema = {}, K extends string & keyof O = string
 			rule.pattern = createMatchRegExp(rule.pattern);
 		} else if (rule.type !== 'string' && 'pattern' in rule) {
 			if (opts.printWarnings)
-				console.warn(`Invalid option 'pattern' on rule '${k}': 'pattern' is only possible for string-type rules`);
+				console.warn(`Rule '${k}' incorrectly implements pattern: rule type is not 'string'.`);
 
 			delete (rule as OptionRuleString).pattern;
 		}
@@ -485,7 +492,7 @@ function expandSchema<O extends Schema = {}, K extends string & keyof O = string
 		}
 	}
 
-	return out as O;
+	return out as T;
 }
 
 function evalTestFn(val: any, fn?: (arg: any) => boolean, passFull?: boolean,
@@ -570,18 +577,19 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 	}
 {
 	const required: Set<string> = new Set();
+	const opts = {...OptionsPrototype, ...options};
 	const out: P = Object.create(null) as P;
 	if (typeof obj !== 'object')
 		obj = out;
 
-	if (O.throwOnUnrecognized === true) {
+	if (opts.throwOnUnrecognized === true) {
 		for (const k of Object.keys(obj)) {
 			if (!(k in schema))
 				handleRuleError(RULE_ERROR.UNRECOGNIZED_OPTION, schema, k);
 		}
 	}
 
-	const _schema = expandSchema<S>(schema, O);
+	const _schema = expandSchema<S>(schema, opts);
 
 	// Mapped options and macros need to go first
 	// so that they do not take precedence.
@@ -591,18 +599,18 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 
 	for (const k of declKeys) {
 		let rule = _schema[k];
-		let optName = k;
+		let targetKey = k;
 
 		if (rule.macro) {
-			const rootOpt = getRootMacro(k, _schema, O);
-			if (rootOpt && _schema[rootOpt] && rootOpt !== k && !(!rule.allowOverride && rootOpt in out))
-				rule = _schema[rootOpt];
+			const rootKey = getRootMacro(k, _schema, opts) as string;
+			if (rootKey && _schema[rootKey] && rootKey !== k && !(!rule.allowOverride && rootKey in out))
+				rule = _schema[rootKey];
 			else
 				continue;
-
-			optName = rootOpt;
+	
+			targetKey = rootKey;
 		}
-		optName = rule.mapTo ?? optName;
+		targetKey = (rule.mapTo ?? targetKey) as string;
 
 		let __eq_val;
 		let __eq_flag = false;
@@ -638,7 +646,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 		if (!hasProperty(obj, k, rule.allowInherited)) {
 			invalid(out, k, targetKey, rule, ERRNO.MISSING_VALUE, opts);
 			if (rule.required)
-				required.add(optName);
+				required.add(targetKey);
 			continue;
 		}
 
@@ -729,7 +737,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 			invalid(out, k, targetKey, rule, ERRNO.TEST_FAIL, opts);
 			continue;
 		} else {
-			out[optName as keyof S] = passTest[1];
+			out[targetKey as keyof S] = passTest[1];
 		}
 	}
 

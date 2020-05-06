@@ -3,7 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const MAX_REFERENCE_DEPTH = 16;
 const SIMPLE_PATTERN_REGEX = /^\(([^()]+)(?:\+|\*)(?=\))\)$/;
 function isObject(arg) {
-    return typeof arg === 'object' || (arg instanceof Object);
+    return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
+}
+function hasProperty(obj, prop, isOwnProperty) {
+    if (!isObject(obj))
+        return false;
+    if (isOwnProperty === true)
+        return Object.prototype.hasOwnProperty.call(obj, prop);
+    return prop in obj;
 }
 function isTypedArray(val) {
     return val instanceof Uint8Array.prototype.__proto__.constructor;
@@ -31,8 +38,21 @@ function shouldCoerceType(rule) {
             rule.type === 'string' || rule.type === 'bigint');
 }
 function isConstructor(arg) {
-    return arg instanceof Object &&
-        typeof arg.constructor === 'function';
+    return arg instanceof Object && typeof arg.constructor === 'function';
+}
+function resolvePropertyKey(key, schema, opts) {
+    var _a;
+    let rule = schema[key];
+    let out = key;
+    if (rule.macro) {
+        const rootKey = getRootMacro(key, schema, opts);
+        if (rootKey && rootKey in schema && rootKey !== key)
+            rule = schema[rootKey];
+        else
+            throw Error(`Rule for property ${String(key)} incorrectly implements macro.`);
+        out = rootKey;
+    }
+    return (_a = rule.mapTo) !== null && _a !== void 0 ? _a : out;
 }
 function ToNumber(val) {
     if (typeof val === 'number')
@@ -163,21 +183,21 @@ function handleRuleError(type, opts, ruleName, subst_0, subst_1) {
     let msg = '';
     switch (type) {
         case 1:
-            msg = `Option object contains unrecognized option '${ruleName}'`;
+            msg = `Option object contains unrecognized option '${String(ruleName)}'`;
             if (opts.throwOnUnrecognized === true)
                 errorConst = Error;
             doWarn = false;
             break;
         case 2:
-            msg = `Rule '${ruleName}' was discarded because it references non-existent rule '${subst_0}'`;
+            msg = `Rule '${String(ruleName)}' was discarded because it references non-existent rule '${String(subst_0)}'`;
             if (opts.throwOnReferenceError === true)
                 errorConst = ReferenceError;
             break;
         case 3:
             if (ruleName === subst_0)
-                msg = `Rule '${ruleName}' references itself`;
+                msg = `Rule '${String(ruleName)}' references itself`;
             else
-                msg = `Rule '${ruleName}' forms a circular reference because rule '${subst_0}' references '${subst_1}'`;
+                msg = `Rule '${String(ruleName)}' forms a circular reference because rule '${String(subst_0)}' references '${String(subst_1)}'`;
             if (opts.throwOnCircularReference === true)
                 errorConst = Error;
             break;
@@ -187,19 +207,23 @@ function handleRuleError(type, opts, ruleName, subst_0, subst_1) {
     else if (doWarn)
         console.warn(msg);
 }
-function invalid(obj, key, rule, reason, options) {
+function invalid(obj, baseKey, targetKey, rule, reason, options) {
+    baseKey = String(baseKey);
     if (options.throwOnInvalid !== true &&
         (rule.required !== true || (rule.__refs && rule.__refs.length))) {
         if ('defaultValue' in rule &&
-            (!(key in obj) || ((rule.mapTo || rule.macro) &&
-                key in obj && rule.allowOverride))) {
-            obj[key] = rule.defaultValue;
+            (!(targetKey in obj) ||
+                ((rule.mapTo || rule.macro) && targetKey in obj &&
+                    rule.allowOverride))) {
+            obj[targetKey] = rule.defaultValue;
         }
         return;
     }
-    let prop = `property '${key}'`;
-    if (rule.mapTo)
-        prop += ` (macro for ${rule.mapTo})`;
+    let prop;
+    if (baseKey === targetKey)
+        prop = `Value matching rule '${baseKey}'`;
+    else
+        prop = `Value mapped to '${String(targetKey)}' via rule '${baseKey}'`;
     switch (reason) {
         case 0:
             rule = rule;
@@ -214,15 +238,15 @@ function invalid(obj, key, rule, reason, options) {
         case 3:
             throw TypeError(`${prop} is not an integer`);
         case 4:
-            throw ReferenceError(`${prop} is required, but is not present`);
+            throw ReferenceError(`Missing required value for rule '${baseKey}'.`);
         case 5:
             throw TypeError(`${prop} must be of type ${rule.type},` +
-                ` got ${typeof obj[key]}`);
+                ` got ${typeof obj[baseKey]}`);
         case 6:
             throw Error(`${prop} failed to validate`);
         case 7:
             rule = rule;
-            if (typeof obj[key].length !== 'number')
+            if (typeof obj[baseKey].length !== 'number')
                 throw ReferenceError(prop + 'has a specified max \
                                 and/or min length but value lacks a length property');
             const lenMax = 'maxLength' in rule ?
@@ -324,10 +348,11 @@ function expandSchema(schema, opts) {
                 refs[r].push(k);
         }
         else if (schema[k].mapTo && schema[k].mapTo in schema) {
-            if (!refs[schema[k].mapTo])
-                refs[schema[k].mapTo] = [];
-            if (!refs[schema[k].mapTo].includes(k))
-                refs[schema[k].mapTo].push(k);
+            const _k = schema[k].mapTo;
+            if (!refs[_k])
+                refs[_k] = [];
+            if (!refs[_k].includes(k))
+                refs[_k].push(k);
         }
         if (typeof out[k].allowOverride !== 'boolean' && !schema[k].macro)
             out[k].allowOverride = !schema.allowOverride;
@@ -412,32 +437,32 @@ Object.freeze(OptionsPrototype);
 function normalizeObject(schema, obj, options) {
     var _a, _b;
     const required = new Set();
-    const O = { ...OptionsPrototype, ...options };
-    const out = {};
+    const opts = { ...OptionsPrototype, ...options };
+    const out = Object.create(null);
     if (typeof obj !== 'object')
         obj = out;
-    if (O.throwOnUnrecognized === true) {
+    if (opts.throwOnUnrecognized === true) {
         for (const k of Object.keys(obj)) {
             if (!(k in schema))
                 handleRuleError(1, schema, k);
         }
     }
-    const _schema = expandSchema(schema, O);
+    const _schema = expandSchema(schema, opts);
     const declKeys = Object.keys(_schema)
         .sort((a, b) => (_schema[a].mapTo || _schema[a].macro ? -1 : 0) -
         (_schema[b].mapTo || _schema[b].macro ? -1 : 0));
     for (const k of declKeys) {
         let rule = _schema[k];
-        let optName = k;
+        let targetKey = resolvePropertyKey(k, _schema, opts);
         if (rule.macro) {
-            const rootOpt = getRootMacro(k, _schema, O);
+            const rootOpt = getRootMacro(k, _schema, opts);
             if (rootOpt && _schema[rootOpt] && rootOpt !== k && !(!rule.allowOverride && rootOpt in out))
                 rule = _schema[rootOpt];
             else
                 continue;
-            optName = rootOpt;
+            targetKey = rootOpt;
         }
-        optName = (_a = rule.mapTo) !== null && _a !== void 0 ? _a : optName;
+        targetKey = ((_a = rule.mapTo) !== null && _a !== void 0 ? _a : targetKey);
         let __eq_val;
         let __eq_flag = false;
         let __skip_type_check = false;
@@ -466,10 +491,10 @@ function normalizeObject(schema, obj, options) {
                 rule.type = (_b = rule.type) === null || _b === void 0 ? void 0 : _b.toLowerCase();
                 break;
         }
-        if (!(k in obj)) {
-            invalid(out, optName, rule, 4, O);
+        if (!hasProperty(obj, k, rule.notInherited)) {
+            invalid(out, k, targetKey, rule, 4, opts);
             if (rule.required)
-                required.add(optName);
+                required.add(targetKey);
             continue;
         }
         let value = obj[k];
@@ -482,32 +507,32 @@ function normalizeObject(schema, obj, options) {
             value = rule.transformFn.call(null, value);
         const valType = typeof value;
         if (rule.type !== valType && !__skip_type_check) {
-            invalid(out, k, rule, 5, O);
+            invalid(out, k, targetKey, rule, 5, opts);
             continue;
         }
         if (__eq_flag && value !== __eq_val) {
-            invalid(out, k, rule, 9, O);
+            invalid(out, k, targetKey, rule, 9, opts);
             continue;
         }
         if (__check_arraylike && !isArrayLike(value)) {
-            invalid(out, k, rule, 10, O);
+            invalid(out, k, targetKey, rule, 10, opts);
             continue;
         }
         if ((rule.type === 'object' || rule.type === 'function') && 'instance' in rule) {
             if (!isObject(value) ||
                 !(value instanceof rule.instance)) {
-                invalid(out, k, rule, 8, O);
+                invalid(out, k, targetKey, rule, 8, opts);
                 continue;
             }
         }
         if (rule.type === 'string' && rule.pattern && !rule.pattern.test(value)) {
-            invalid(out, k, rule, 11, O);
+            invalid(out, k, targetKey, rule, 11, opts);
             continue;
         }
         if (valType === 'number' || valType === 'bigint') {
             if (('min' in rule && rule.min > value) ||
                 ('max' in rule && rule.max < value)) {
-                invalid(out, k, rule, 0, O);
+                invalid(out, k, targetKey, rule, 0, opts);
                 continue;
             }
         }
@@ -518,38 +543,38 @@ function normalizeObject(schema, obj, options) {
                 (len === NaN || rule.minLength > len)) ||
                 ('maxLength' in rule &&
                     (len === NaN || rule.maxLength < len))) {
-                invalid(out, k, rule, 7, O);
+                invalid(out, k, targetKey, rule, 7, opts);
                 continue;
             }
         }
         if (valType === 'number') {
             if ('notNaN' in rule && rule.notNaN && Number.isNaN(value)) {
-                invalid(out, k, rule, 2, O);
+                invalid(out, k, targetKey, rule, 2, opts);
                 continue;
             }
             else if ('notInfinite' in rule && rule.notInfinite &&
                 !Number.isFinite(value)) {
-                invalid(out, k, rule, 1, O);
+                invalid(out, k, targetKey, rule, 1, opts);
                 continue;
             }
             else if ('notFloat' in rule && rule.notFloat &&
                 !Number.isInteger(value)) {
-                invalid(out, k, rule, 3, O);
+                invalid(out, k, targetKey, rule, 3, opts);
                 continue;
             }
         }
         const passTest = evalTestFn(value, rule.passTest, rule.testFullValue, rule.allowPartialPass, rule.compactArrayLike);
         if (!passTest[0]) {
-            invalid(out, k, rule, 6, O);
+            invalid(out, k, targetKey, rule, 6, opts);
             continue;
         }
         else {
-            out[optName] = passTest[1];
+            out[targetKey] = passTest[1];
         }
     }
     for (const r of required) {
         if (!(r in out))
-            invalid(out, r, { required: true }, 4, O);
+            invalid(out, r, r, { required: true }, 4, opts);
     }
     return out;
 }

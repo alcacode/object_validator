@@ -22,7 +22,7 @@ const SIMPLE_PATTERN_REGEX = /^\(([^()]+)(?:\+|\*)(?=\))\)$/;
 
 function isObject(arg: any): arg is object
 {
-	return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
+	return arg !== null && (typeof arg === 'object' || arg instanceof Object);
 }
 
 function _hasOwnProperty<P extends PropertyKey>(obj: object, p: P): obj is { [k in P]: any } {

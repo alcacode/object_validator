@@ -175,6 +175,14 @@ The options declaration object is used to declare the requirements of applicable
 
 Optional. Overrides the default value of `allowOverride`. Does _not_ override individually set `allowOverride`. Default: `true`.
 
+### `Options.noReturnValuePrototype`
+
+- <`boolean`>
+
+If `true`, causes `normalizeObject()` to return a null prototype object, otherwise its prototype will be `Object`.
+
+Default: `true`.
+
 ### `Options.throwOnCircularReference`
 
 - <`boolean`>

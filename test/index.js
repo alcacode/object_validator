@@ -172,5 +172,4 @@ for (const ck in tests) {
 }
 const totalRes = resCount[0] + resCount[1];
 console.log(`Passed: ${resCount[0]} / ${totalRes}`);
-console.log(`Failed: ${resCount[1]} / ${totalRes}`);
-console.log(`Final result: ${resCount[0] === totalRes ? 'PASS' : 'FAIL'}`);
+console.log(`\nFinal result: ${resCount[0] === totalRes ? 'PASS' : 'FAIL'}`);

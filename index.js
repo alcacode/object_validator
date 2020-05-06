@@ -5,10 +5,10 @@ const SIMPLE_PATTERN_REGEX = /^\(([^()]+)(?:\+|\*)(?=\))\)$/;
 function isObject(arg) {
     return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
 }
-function hasProperty(obj, prop, isOwnProperty) {
+function hasProperty(obj, prop, allowInherited) {
     if (!isObject(obj))
         return false;
-    if (isOwnProperty === true)
+    if (allowInherited !== true)
         return Object.prototype.hasOwnProperty.call(obj, prop);
     return prop in obj;
 }
@@ -39,20 +39,6 @@ function shouldCoerceType(rule) {
 }
 function isConstructor(arg) {
     return arg instanceof Object && typeof arg.constructor === 'function';
-}
-function resolvePropertyKey(key, schema, opts) {
-    var _a;
-    let rule = schema[key];
-    let out = key;
-    if (rule.macro) {
-        const rootKey = getRootMacro(key, schema, opts);
-        if (rootKey && rootKey in schema && rootKey !== key)
-            rule = schema[rootKey];
-        else
-            throw Error(`Rule for property ${String(key)} incorrectly implements macro.`);
-        out = rootKey;
-    }
-    return (_a = rule.mapTo) !== null && _a !== void 0 ? _a : out;
 }
 function ToNumber(val) {
     if (typeof val === 'number')
@@ -329,7 +315,7 @@ function resolveReference(key, schema, opts) {
     return out;
 }
 function expandSchema(schema, opts) {
-    const out = Object.assign({}, schema);
+    const out = Object.assign(Object.create(null), schema);
     const refs = Object.create(null);
     for (const k of Object.keys(schema)) {
         let rule = schema[k];
@@ -362,7 +348,7 @@ function expandSchema(schema, opts) {
         }
         else if (rule.type !== 'string' && 'pattern' in rule) {
             if (opts.printWarnings)
-                console.warn(`Invalid option 'pattern' on rule '${k}': 'pattern' is only possible for string-type rules`);
+                console.warn(`Rule '${k}' incorrectly implements pattern: rule type is not 'string'.`);
             delete rule.pattern;
         }
     }
@@ -428,6 +414,7 @@ function evalTestFn(val, fn, passFull, partial, cmpctArrLike) {
 const OptionsPrototype = {
     allowOverride: true,
     printWarnings: true,
+    noReturnValuePrototype: true,
     throwOnCircularReference: false,
     throwOnInvalid: false,
     throwOnReferenceError: false,
@@ -453,14 +440,14 @@ function normalizeObject(schema, obj, options) {
         (_schema[b].mapTo || _schema[b].macro ? -1 : 0));
     for (const k of declKeys) {
         let rule = _schema[k];
-        let targetKey = resolvePropertyKey(k, _schema, opts);
+        let targetKey = k;
         if (rule.macro) {
-            const rootOpt = getRootMacro(k, _schema, opts);
-            if (rootOpt && _schema[rootOpt] && rootOpt !== k && !(!rule.allowOverride && rootOpt in out))
-                rule = _schema[rootOpt];
+            const rootKey = getRootMacro(k, _schema, opts);
+            if (rootKey && _schema[rootKey] && rootKey !== k && !(!rule.allowOverride && rootKey in out))
+                rule = _schema[rootKey];
             else
                 continue;
-            targetKey = rootOpt;
+            targetKey = rootKey;
         }
         targetKey = ((_a = rule.mapTo) !== null && _a !== void 0 ? _a : targetKey);
         let __eq_val;
@@ -491,7 +478,7 @@ function normalizeObject(schema, obj, options) {
                 rule.type = (_b = rule.type) === null || _b === void 0 ? void 0 : _b.toLowerCase();
                 break;
         }
-        if (!hasProperty(obj, k, rule.notInherited)) {
+        if (!hasProperty(obj, k, rule.allowInherited)) {
             invalid(out, k, targetKey, rule, 4, opts);
             if (rule.required)
                 required.add(targetKey);
@@ -576,6 +563,8 @@ function normalizeObject(schema, obj, options) {
         if (!(r in out))
             invalid(out, r, r, { required: true }, 4, opts);
     }
+    if (opts.noReturnValuePrototype === false)
+        return Object.assign({}, out);
     return out;
 }
 exports.normalizeObject = normalizeObject;

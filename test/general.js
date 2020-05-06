@@ -94,17 +94,8 @@ exports.testConfig = {
         expect: Object.prototype.hasOwnProperty,
         propKey: 'hasOwnProperty',
         decl: {
-            type: 'function'
-        }
-    },
-    notInherited: {
-        description: 'Ignore Inherited',
-        expect: undefined,
-        propKey: 'hasOwnProperty',
-        shouldFail: false,
-        decl: {
             type: 'function',
-            notInherited: true
+            allowInherited: true
         }
     }
 };

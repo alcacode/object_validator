@@ -345,6 +345,11 @@ declare module 'object_validator'
 		noReturnValuePrototype?: boolean;
 
 		/**
+		 * If `true`, skips parsing schema with `expandSchema()`.
+		 */
+		skipSchemaExpansion?: boolean;
+
+		/**
 		 * If `true`, throw an exception if any rule contains
 		 * circular references.\
 		 * Default: `false`.
@@ -385,4 +390,26 @@ declare module 'object_validator'
 		schema: Schema<O>,
 		obj?: P,
 		options?: Options): boolean;
+
+	/**
+	 * Creates a new function that take an input object as its only
+	 * argument. When called the input object is passed to `normalizeObject`
+	 * along with the options it was created with and schema in its expanded
+	 * form.
+	 */
+	export function createNormalizer<
+		S extends Schema, P extends {[k in keyof S]?: any}>(
+		schema: S, options?: Options&{skipSchemaExpansion: true}):
+		(obj?: P) => ReturnType<typeof normalizeObject>;
+
+	/**
+	 * Creates a new function that take an input object as its only
+	 * argument. When called the input object is passed to `validateObject`
+	 * along with the options it was created with and schema in its expanded
+	 * form.
+	 */
+	export function createValidator<
+		S extends Schema, P extends {[k in keyof S]?: any}>(
+		schema: S, options?: Options&{skipSchemaExpansion: true}):
+		(obj?: P) => ReturnType<typeof validateObject>;
 }

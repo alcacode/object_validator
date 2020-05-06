@@ -636,6 +636,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 		}
 
 		if (!hasProperty(obj, k, rule.allowInherited)) {
+			invalid(out, k, targetKey, rule, ERRNO.MISSING_VALUE, opts);
 			if (rule.required)
 				required.add(optName);
 			continue;
@@ -656,31 +657,31 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 		/** Final value type. */
 		const valType = typeof value;
 		if (rule.type !== valType && !__skip_type_check) {
-			invalid(out, k, rule, ERRNO.INVALID_TYPE, O);
+			invalid(out, k, targetKey, rule, ERRNO.INVALID_TYPE, opts);
 			continue;
 		}
 
 		if (__eq_flag && value !== __eq_val) {
-			invalid(out, k, rule, ERRNO.UNEXPECTED_VALUE, O);
+			invalid(out, k, targetKey, rule, ERRNO.UNEXPECTED_VALUE, opts);
 			continue;
 		}
 
 		if (__check_arraylike && !isArrayLike(value)) {
-			invalid(out, k, rule, ERRNO.NOT_ARRAY_LIKE, O);
+			invalid(out, k, targetKey, rule, ERRNO.NOT_ARRAY_LIKE, opts);
 			continue;
 		}
 
 		if ((rule.type === 'object' || rule.type === 'function') && 'instance' in rule) {
 			if (!isObject(value) ||
 			    !(value instanceof rule.instance!)) {
-				invalid(out, k, rule, ERRNO.INVALID_INSTANCE, O);
+				invalid(out, k, targetKey, rule, ERRNO.INVALID_INSTANCE, opts);
 				continue;
 			}
 		}
 
 		/* Pattern matching. */
 		if (rule.type === 'string' && rule.pattern && !(rule.pattern as RegExp).test(value)) {
-			invalid(out, k, rule, ERRNO.PATTERN_MISMATCH, O);
+			invalid(out, k, targetKey, rule, ERRNO.PATTERN_MISMATCH, opts);
 			continue;
 		}
 
@@ -688,7 +689,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 		if (valType === 'number' || valType === 'bigint') {
 			if (('min' in rule && rule.min! > value) ||
 			    ('max' in rule && rule.max! < value)) {
-				invalid(out, k, rule, ERRNO.OUT_OF_RANGE, O);
+				invalid(out, k, targetKey, rule, ERRNO.OUT_OF_RANGE, opts);
 				continue;
 			}
 		} else if (valType === 'string' || valType === 'object') {
@@ -699,22 +700,22 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 			     (len === NaN || rule.minLength! > len)) ||
 			    ('maxLength' in rule &&
 			     (len === NaN || rule.maxLength! < len))) {
-				invalid(out, k, rule, ERRNO.INVALID_LENGTH, O);
+				invalid(out, k, targetKey, rule, ERRNO.INVALID_LENGTH, opts);
 				continue;
 			}
 		}
 
 		if (valType === 'number') {
 			if ('notNaN' in rule && rule.notNaN && Number.isNaN(value)) {
-				invalid(out, k, rule, ERRNO.NOT_A_NUMBER, O);
+				invalid(out, k, targetKey, rule, ERRNO.NOT_A_NUMBER, opts);
 				continue;
 			} else if ('notInfinite' in rule && rule.notInfinite &&
 				   !Number.isFinite(value)) {
-				invalid(out, k, rule, ERRNO.NOT_FINITE, O);
+				invalid(out, k, targetKey, rule, ERRNO.NOT_FINITE, opts);
 				continue;
 			} else if ('notFloat' in rule && rule.notFloat &&
 				   !Number.isInteger(value)) {
-				invalid(out, k, rule, ERRNO.NOT_INTEGER, O);
+				invalid(out, k, targetKey, rule, ERRNO.NOT_INTEGER, opts);
 				continue;
 			}
 		}
@@ -725,7 +726,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 				   (rule as OptionRuleObject).compactArrayLike);
 
 		if (!passTest[0]) {
-			invalid(out, k, rule, ERRNO.TEST_FAIL, O);
+			invalid(out, k, targetKey, rule, ERRNO.TEST_FAIL, opts);
 			continue;
 		} else {
 			out[optName as keyof S] = passTest[1];
@@ -734,7 +735,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 
 	for (const r of required) {
 		if (!(r in out))
-			invalid(out, r, {required: true} as OptionRule, ERRNO.MISSING_VALUE, O);
+			invalid(out, r, r, { required: true } as OptionRule, ERRNO.MISSING_VALUE, opts);
 	}
 
 	if (opts.noReturnValuePrototype === false)

@@ -346,6 +346,12 @@ declare module 'object_validator'
 		printWarnings?: boolean;
 
 		/**
+		 * If `true`, causes `normalizeObject()` to return a null
+		 * prototype object, otherwise its prototype will be `Object`.
+		 */
+		noReturnValuePrototype?: boolean;
+
+		/**
 		 * If `true`, throw an exception if any rule contains
 		 * circular references.\
 		 * Default: `false`.

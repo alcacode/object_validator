@@ -5,32 +5,36 @@ const SIMPLE_PATTERN_REGEX = /^\(([^()]+)(?:\+|\*)(?=\))\)$/;
 function isObject(arg) {
     return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
 }
+function _hasOwnProperty(obj, p) {
+    return Object.prototype.hasOwnProperty.call(obj, p);
+}
 function hasProperty(obj, prop, allowInherited) {
     if (!isObject(obj))
         return false;
     if (allowInherited !== true)
-        return Object.prototype.hasOwnProperty.call(obj, prop);
+        return _hasOwnProperty(obj, prop);
     return prop in obj;
 }
 function isTypedArray(val) {
     return val instanceof Uint8Array.prototype.__proto__.constructor;
 }
-function isWellFormedIterator(val) {
-    if (!(val instanceof Function))
+function isIterable(val) {
+    if (!(val[Symbol.iterator] instanceof Function))
         return false;
-    const itr = val();
+    const itr = val[Symbol.iterator]();
+    if (!(itr[Symbol.iterator] instanceof Function))
+        return false;
     let tmp;
-    if (itr.next instanceof Function && isObject(tmp = itr.next()) &&
-        typeof tmp.done === 'boolean' && 'value' in tmp)
-        return true;
-    return false;
+    return isObject(tmp) &&
+        itr.next instanceof Function &&
+        isObject(tmp = itr.next()) &&
+        typeof tmp.done === 'boolean' &&
+        _hasOwnProperty(tmp, 'value');
 }
 function isArrayLike(val) {
-    if (!isObject(val) || typeof val.length !== 'number')
+    if (!isObject(val) || !_hasOwnProperty(val, 'length') || typeof val.length !== 'number')
         return false;
-    return Array.isArray(val) || isTypedArray(val) ||
-        Array.prototype[Symbol.iterator] === val[Symbol.iterator] ||
-        isWellFormedIterator(val[Symbol.iterator]);
+    return Array.isArray(val) || isTypedArray(val) || isIterable(val);
 }
 function shouldCoerceType(rule) {
     return rule.coerceType === true &&

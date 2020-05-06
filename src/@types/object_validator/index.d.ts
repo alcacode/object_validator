@@ -149,35 +149,61 @@ declare module 'object_validator'
 		allowPartialPass?: boolean;
 
 		/**
-		 * Use the rules of another option and map output to it.
-		 * _All_ other options are discarded if set. If the
+		 * Use the rules of another rule and map output to it.
+		 * _All_ other rules are discarded if set. If the
 		 * referenced rule does not exist, a warning message
-		 * will be printed and the option will be discarded.
+		 * will be printed and the property will be discarded.
 		 */
-		macro?: string;
+		macro?: PropertyKey;
 
 		/**
 		 * Inherit rules from another rule. Settings defined on the
 		 * extending rule take precedence over inherited rules. If the
 		 * referenced rule does not exist or forms a circular reference,
-		 * a warning will be printed and the option will be discarded.
+		 * a warning will be printed and the property will be discarded.
 		 */
-		extends?: string;
+		extends?: PropertyKey;
 
 		/**
-		 * Map option to a different property key in the output
+		 * Map property to a different property key in the output
 		 * object.
 		 */
-		mapTo?: string;
+		mapTo?: PropertyKey;
 
 		/**
-		 * If `true`, a mapped option may overwrite the option
+		 * If `true`, a mapped property may overwrite the property
 		 * it is mapped to (the last valid value is used). If
-		 * `false`, a mapped option will only used when the
-		 * option it is mapped to is either missing or invalid.
+		 * `false`, a mapped property is only used when the
+		 * property it is mapped to is either missing or invalid.
 		 * Defaults to the value of the global `allowOverride`.
 		 */
 		allowOverride?: boolean;
+
+		/**
+		 * If `true`, ignores properties in the input object's
+		 * prototype chain.
+		 * 
+		 * # Example
+		 * Given an empty `Object` literal `{}` as the input object and
+		 * the below rule
+		 * ```js
+		 * hasOwnProperty: {
+		 * 	type: 'function'
+		 * }
+		 * ```
+		 * This would produce a match since `hasOwnProperty` exist in
+		 * the `Object` literal's prototype chain. To prevent this
+		 * match from occuring the rule would have to be changed thusly
+		 * ```js
+		 * hasOwnProperty: {
+		 * 	type: 'function',
+		 * 	notInherited: true
+		 * }
+		 * ```
+		 * 
+		 * Default: `false`.
+		 */
+		notInherited?: boolean;
 
 		/** 
 		 * Reference chain of expanded rule.
@@ -195,7 +221,7 @@ declare module 'object_validator'
 	}
 
 	export interface OptionRuleMacro {
-		macro: string;
+		macro: PropertyKey;
 		type?: undefined;
 	}
 
@@ -254,7 +280,7 @@ declare module 'object_validator'
 	export type CoercableOptionRuleType = OptionRuleBase&
 		{type: CoercableTypes};
 
-	export type OptionRule = OptionRuleBase&
+	export type OptionRule = OptionRuleBase &
 		(OptionRuleObject|OptionRuleString|OptionRuleFunction|
 		 OptionRuleUndefined|OptionRuleNumber|OptionRuleBigint|
 		 OptionRuleBoolean|OptionRuleArray|OptionRuleSymbol|

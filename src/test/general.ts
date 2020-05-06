@@ -88,5 +88,14 @@ export const testConfig: TestConfig = {
                         type: 'number',
                         mapTo: 'opt'
                 }
+        },
+        inheritedValue: {
+                description: 'Inherited Value',
+                expect: Object.prototype.hasOwnProperty,
+                propKey: 'hasOwnProperty',
+                decl: {
+                        type: 'function',
+                        allowInherited: true
+                }
         }
 };

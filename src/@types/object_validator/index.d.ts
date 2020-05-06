@@ -180,30 +180,23 @@ declare module 'object_validator'
 		allowOverride?: boolean;
 
 		/**
-		 * If `true`, ignores properties in the input object's
-		 * prototype chain.
+		 * If `true`, extends property search to include the input
+		 * object's prototype chain.
 		 * 
 		 * # Example
-		 * Given an empty `Object` literal `{}` as the input object and
-		 * the below rule
-		 * ```js
-		 * hasOwnProperty: {
-		 * 	type: 'function'
-		 * }
-		 * ```
-		 * This would produce a match since `hasOwnProperty` exist in
-		 * the `Object` literal's prototype chain. To prevent this
-		 * match from occuring the rule would have to be changed thusly
-		 * ```js
-		 * hasOwnProperty: {
-		 * 	type: 'function',
-		 * 	notInherited: true
-		 * }
-		 * ```
 		 * 
-		 * Default: `false`.
+		 * ```js
+		 * const schema = {
+		 * 	hasOwnProperty: {
+		 * 		type: 'function',
+		 * 		allowInherited: true
+		 * 	}
+		 * };
+		 * 
+		 * normalizeObject(schema, {}); // { hasOwnProperty: [Function: hasOwnProperty] }
+		 * ```
 		 */
-		notInherited?: boolean;
+		allowInherited?: boolean;
 
 		/** 
 		 * Reference chain of expanded rule.

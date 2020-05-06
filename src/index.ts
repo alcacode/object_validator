@@ -58,7 +58,7 @@ function isIterable<T extends any, U extends IterableIterator<T>>(val: any): val
 	       itr.next instanceof Function  &&
 	       isObject(tmp = itr.next())    &&
 	       typeof tmp.done === 'boolean' &&
-	       _hasOwnProperty(tmp, 'value');
+	       'value' in tmp;
 }
 
 function isArrayLike<T>(val: any): val is ArrayLike<T>

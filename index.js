@@ -30,7 +30,7 @@ function isIterable(val) {
         itr.next instanceof Function &&
         isObject(tmp = itr.next()) &&
         typeof tmp.done === 'boolean' &&
-        _hasOwnProperty(tmp, 'value');
+        'value' in tmp;
 }
 function isArrayLike(val) {
     if (!isObject(val) || !_hasOwnProperty(val, 'length') || typeof val.length !== 'number')

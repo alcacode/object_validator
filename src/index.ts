@@ -236,10 +236,11 @@ function createMatchRegExp(arg: string | RegExp): RegExp {
         return new RegExp(`^${out.join('')}$`, 'u');
 }
 
-function handleRuleError(type: RULE_ERROR.CIRCULAR_REFERENCE, opts: Options, ruleName: string, lastNonCirc?: string, circRef?: any): void;
-function handleRuleError(type: RULE_ERROR.REFERENCE_ERROR, opts: Options, ruleName: string, faultRefName?: string): void;
-function handleRuleError(type: RULE_ERROR.UNRECOGNIZED_OPTION, opts: Options, ruleName: string): void;
-function handleRuleError(type: RULE_ERROR, opts: Options, ruleName: string, subst_0?: string, subst_1?: string): void {
+function handleRuleError(type: RULE_ERROR.CIRCULAR_REFERENCE, opts: Options, ruleName: PropertyKey, lastNonCirc?: PropertyKey, circRef?: any): void;
+function handleRuleError(type: RULE_ERROR.REFERENCE_ERROR, opts: Options, ruleName: PropertyKey, faultRefName?: PropertyKey): void;
+function handleRuleError(type: RULE_ERROR.UNRECOGNIZED_OPTION, opts: Options, ruleName: PropertyKey): void;
+function handleRuleError(type: RULE_ERROR, opts: Options, ruleName: PropertyKey, subst_0?: PropertyKey, subst_1?: PropertyKey): void
+{
 	let errorConst: ErrorConstructor | undefined = undefined;
 	let doWarn = opts.printWarnings === false ? false : true;
 	let msg = '';

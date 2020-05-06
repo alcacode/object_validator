@@ -754,7 +754,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 	if (opts.noReturnValuePrototype === false)
 		return Object.assign({}, out);
 
-	return out as any;
+	return out;
 }
 
 export function

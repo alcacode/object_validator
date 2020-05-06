@@ -278,22 +278,29 @@ function handleRuleError(type: RULE_ERROR, opts: Options, ruleName: PropertyKey,
 		console.warn(msg);
 }
 
-function invalid(obj: {[x: string]: any}, key: string, rule: OptionRule, reason: ERRNO, options: Options): void
+function invalid(obj: { [x: string]: any }, baseKey: PropertyKey,
+		 targetKey: PropertyKey, rule: OptionRule, reason: ERRNO,
+		 options: Options): void
 {
+	baseKey = String(baseKey);
+
 	if (options.throwOnInvalid !== true &&
 	    (rule.required !== true || (rule.__refs && rule.__refs.length))) {
 		if ('defaultValue' in rule &&
-		    (!(key in obj) || ((rule.mapTo || rule.macro) &&
-				       key in obj && rule.allowOverride))) {
-			obj[key] = rule.defaultValue;
+		    (!(targetKey in obj) ||
+		     ((rule.mapTo || rule.macro) && targetKey in obj &&
+		      rule.allowOverride))) {
+			obj[targetKey as string] = rule.defaultValue;
 		}
 
 		return;
 	}
 
-	let prop = `property '${key}'`;
-	if (rule.mapTo)
-		prop += ` (macro for ${rule.mapTo})`;
+	let prop: string;
+	if (baseKey === targetKey)
+		prop = `Value matching rule '${baseKey}'`;
+	else
+		prop = `Value mapped to '${String(targetKey)}' via rule '${baseKey}'`;
 
 	switch (reason) {
 	case ERRNO.OUT_OF_RANGE:
@@ -310,16 +317,16 @@ function invalid(obj: {[x: string]: any}, key: string, rule: OptionRule, reason:
 	case ERRNO.NOT_INTEGER:
 		throw TypeError(`${prop} is not an integer`);
 	case ERRNO.MISSING_VALUE:
-		throw ReferenceError(`${prop} is required, but is not present`);
+		throw ReferenceError(`Missing required value for rule '${baseKey}'.`);
 	case ERRNO.INVALID_TYPE:
 		throw TypeError(`${prop} must be of type ${rule.type},` +
-				` got ${typeof obj[key]}`);
+				` got ${typeof obj[baseKey]}`);
 	case ERRNO.TEST_FAIL:
 		throw Error(`${prop} failed to validate`);
 	case ERRNO.INVALID_LENGTH:
 		rule = rule as (OptionRuleObject | OptionRuleString);
 
-		if (typeof obj[key].length !== 'number')
+		if (typeof obj[baseKey].length !== 'number')
 			throw ReferenceError(prop + 'has a specified max \
                                 and/or min length but value lacks a length property');
 
@@ -357,7 +364,7 @@ function invalid(obj: {[x: string]: any}, key: string, rule: OptionRule, reason:
 }
 
 /** Returns `key` or the property key at the end of a macro chain. */
-function getRootMacro<T extends string>(key: T, schema: Schema<any>, opts: Options): T
+function getRootMacro<T extends PropertyKey>(key: T, schema: Schema<any>, opts: Options): T
 {
 	let chain: T[] = [key];
 	let cur: T|undefined = schema[key]?.macro;

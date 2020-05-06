@@ -418,6 +418,7 @@ const OptionsPrototype = {
     allowOverride: true,
     printWarnings: true,
     noReturnValuePrototype: true,
+    skipSchemaExpansion: false,
     throwOnCircularReference: false,
     throwOnInvalid: false,
     throwOnReferenceError: false,
@@ -437,9 +438,12 @@ export function normalizeObject(schema, obj, options) {
                 handleRuleError(1, schema, k);
         }
     }
-    const _schema = expandSchema(schema, opts);
-    const declKeys = Object.keys(_schema)
-        .sort((a, b) => (_schema[a].mapTo || _schema[a].macro ? -1 : 0) -
+    let _schema;
+    if (opts.skipSchemaExpansion === true)
+        _schema = schema;
+    else
+        _schema = expandSchema(schema, opts);
+    const declKeys = Object.keys(_schema).sort((a, b) => (_schema[a].mapTo || _schema[a].macro ? -1 : 0) -
         (_schema[b].mapTo || _schema[b].macro ? -1 : 0));
     for (const k of declKeys) {
         let rule = _schema[k];
@@ -578,4 +582,14 @@ export function validateObject(schema, obj, options) {
     catch (err) {
     }
     return !!res;
+}
+export function createNormalizer(schema, options) {
+    const _options = Object.assign({}, options, { skipSchemaExpansion: true });
+    const _schema = expandSchema(schema, _options);
+    return (obj) => normalizeObject(_schema, obj, _options);
+}
+export function createValidator(schema, options) {
+    const _options = Object.assign({}, options, { skipSchemaExpansion: true });
+    const _schema = expandSchema(schema, _options);
+    return (obj) => validateObject(_schema, obj, _options);
 }

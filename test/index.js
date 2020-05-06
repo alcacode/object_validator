@@ -1,21 +1,19 @@
-"use strict";
 var _a, _b;
-Object.defineProperty(exports, "__esModule", { value: true });
-const index_1 = require("../index");
-const general_1 = require("./general");
-const string_1 = require("./string");
-const array_1 = require("./array");
-const arraylike_1 = require("./arraylike");
-const number_1 = require("./number");
+import { normalizeObject, validateObject } from '../index';
+import { testConfig as tc_gen } from './general';
+import { testConfig as tc_str } from './string';
+import { testConfig as tc_arr } from './array';
+import { testConfig as tc_arr_like } from './arraylike';
+import { testConfig as tc_num } from './number';
 const LOG_ERROR_STACK = false;
 const EXPAND_ALL = false;
 const OUTPUT_MAX_LENGTH = 60;
 const tests = {
-    any: general_1.testConfig,
-    string: string_1.testConfig,
-    array: array_1.testConfig,
-    arrayLike: arraylike_1.testConfig,
-    number: number_1.testConfig,
+    any: tc_gen,
+    string: tc_str,
+    array: tc_arr,
+    arrayLike: tc_arr_like,
+    number: tc_num,
 };
 function centerAndPad(str, fillString) {
     const l1 = Math.floor((OUTPUT_MAX_LENGTH + str.length) / 2);
@@ -82,8 +80,8 @@ const vTestDecl = {
     b: { extends: 'a', required: false }
 };
 let resCount = [0, 0];
-const validate_test_1 = index_1.validateObject(vTestDecl, { a: 1 }) === true;
-const validate_test_2 = index_1.validateObject(vTestDecl, { b: 1 }) === false;
+const validate_test_1 = validateObject(vTestDecl, { a: 1 }) === true;
+const validate_test_2 = validateObject(vTestDecl, { b: 1 }) === false;
 resCount[validate_test_1 ? 0 : 1]++;
 resCount[validate_test_2 ? 0 : 1]++;
 console.log(`Passed validateObject returns true: `, validate_test_1);
@@ -127,7 +125,7 @@ for (const ck in tests) {
         let didParse = false;
         let errMsg = '';
         try {
-            res = index_1.normalizeObject(decl, inputObj, O);
+            res = normalizeObject(decl, inputObj, O);
             didParse = true;
         }
         catch (err) {

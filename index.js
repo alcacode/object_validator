@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const MAX_REFERENCE_DEPTH = 16;
 const SIMPLE_PATTERN_REGEX = /^\(([^()]+)(?:\+|\*)(?=\))\)$/;
 function isObject(arg) {
@@ -426,7 +424,7 @@ const OptionsPrototype = {
     throwOnUnrecognized: false
 };
 Object.freeze(OptionsPrototype);
-function normalizeObject(schema, obj, options) {
+export function normalizeObject(schema, obj, options) {
     var _a, _b;
     const required = new Set();
     const opts = { ...OptionsPrototype, ...options };
@@ -572,8 +570,7 @@ function normalizeObject(schema, obj, options) {
         return Object.assign({}, out);
     return out;
 }
-exports.normalizeObject = normalizeObject;
-function validateObject(schema, obj, options) {
+export function validateObject(schema, obj, options) {
     var res;
     try {
         res = normalizeObject(schema, obj, options);
@@ -582,4 +579,3 @@ function validateObject(schema, obj, options) {
     }
     return !!res;
 }
-exports.validateObject = validateObject;

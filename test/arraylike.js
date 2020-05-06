@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const genericArrayLike = {
     '0': 1,
     '1': 2,
@@ -12,7 +10,7 @@ const genericArrayLike = {
         }
     }
 };
-exports.testConfig = {
+export const testConfig = {
     array: {
         description: 'Array',
         arg: [1, 2, 3],

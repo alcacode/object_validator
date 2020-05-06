@@ -1,6 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.testConfig = {
+export const testConfig = {
     basic: {
         description: 'Basic',
         arg: 123,

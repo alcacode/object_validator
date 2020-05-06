@@ -432,8 +432,7 @@ function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(ke
 /** Returns the expanded schema based on `schema`. */
 function expandSchema<O extends Schema = {}, K extends string & keyof O = string & keyof O>(schema: O, opts: Options): O
 {
-	const out = Object.assign({}, schema) as Schema;
-	const refs: { [key: string]: K[] } = Object.create(null);
+	const out = Object.assign(Object.create(null), schema) as Schema;
 
 	for (const k of Object.keys(schema) as K[]) {
 		let rule: OptionRule = schema[k];
@@ -570,8 +569,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 	}
 {
 	const required: Set<string> = new Set();
-	const O = {...OptionsPrototype, ...options};
-	const out: P = {} as any;
+	const out: P = Object.create(null) as P;
 	if (typeof obj !== 'object')
 		obj = out;
 
@@ -636,8 +634,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 			break;
 		}
 
-		if (!(k in obj)) {
-			invalid(out, optName, rule, ERRNO.MISSING_VALUE, O);
+		if (!hasProperty(obj, k, rule.allowInherited)) {
 			if (rule.required)
 				required.add(optName);
 			continue;

@@ -551,12 +551,13 @@ function evalTestFn(val: any, fn?: (arg: any) => boolean, passFull?: boolean,
 }
 
 const OptionsPrototype: Required<Options> = {
-	allowOverride: true,
-	printWarnings: true,
+	allowOverride           : true,
+	printWarnings           : true,
+	noReturnValuePrototype  : true,
 	throwOnCircularReference: false,
-	throwOnInvalid: false,
-	throwOnReferenceError: false,
-	throwOnUnrecognized: false
+	throwOnInvalid          : false,
+	throwOnReferenceError   : false,
+	throwOnUnrecognized     : false
 };
 Object.freeze(OptionsPrototype);
 
@@ -735,6 +736,9 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 		if (!(r in out))
 			invalid(out, r, {required: true} as OptionRule, ERRNO.MISSING_VALUE, O);
 	}
+
+	if (opts.noReturnValuePrototype === false)
+		return Object.assign({}, out);
 
 	return out as any;
 }

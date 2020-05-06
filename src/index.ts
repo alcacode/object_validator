@@ -25,6 +25,16 @@ function isObject(arg: any): arg is object
 	return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
 }
 
+function hasProperty<T extends object>(obj: T, prop: PropertyKey, allowInherited?: boolean): prop is keyof T {
+	if (!isObject(obj))
+		return false;
+
+	if (allowInherited !== true)
+		return Object.prototype.hasOwnProperty.call(obj, prop);
+
+	return prop in obj;
+}
+
 function isTypedArray(val: any): val is TypedArrayInstance {
 	return val instanceof Uint8Array.prototype.__proto__.constructor;
 }

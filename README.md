@@ -19,8 +19,7 @@ Download or clone the repository using `git clone https://github.com/alcacode/ob
 ## Usage
 
 ```JavaScript
-// Schema
-const mySchema = {
+const schema = {
     str: {
       type: 'string',
       // Reject values whose 'length' property is less than 1.
@@ -47,11 +46,11 @@ const mySchema = {
 }
 
 // Just validate.
-if (validateObject(obj, mySchema, options))
+if (validateObject(schema, obj, options))
   console.log("Object is valid!");
 
 // Validate and return a normalized object.
-const normalized = normalizeObject(obj, mySchema, options);
+const normalized = normalizeObject(schema, obj, options);
 ```
 
 In the above example, `normalized` is guaranteed to have `str` property with a `String` value of length between 1 and 10. If no valid `str` option is provided, the value of `str2` is used instead (provided that it is valid). If both `str` and `str2` are invalid or missing `str` will recieve its default value `'default'`.\

@@ -22,7 +22,7 @@ const SIMPLE_PATTERN_REGEX = /^\(([^()]+)(?:\+|\*)(?=\))\)$/;
 
 function isObject(arg: any): arg is object
 {
-	return typeof arg === 'object' || (arg instanceof Object);
+	return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
 }
 
 function isTypedArray(val: any): val is TypedArrayInstance {

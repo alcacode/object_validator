@@ -115,11 +115,13 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
     - [`ObjectSchema.macro`](#objectschemamacro)
     - [`ObjectSchema.extends`](#objectschemaextends)
       - [Example](#example-2)
+    - [`ObjectSchema.subRule`](#objectschemasubrule)
+      - [Example](#example-3)
   - [`normalizeObject(schema[,obj][, options])`](#normalizeobjectschemaobj)
     - [Parameters](#parameters)
     - [Returns](#returns-1)
     - [Exceptions](#exceptions)
-    - [Example](#example-3)
+    - [Example](#example-4)
   - [`validateObject(schema[,obj][, options])`](#validateobjectschemaobj)
     - [Parameters](#parameters-1)
     - [Returns](#returns-2)
@@ -495,6 +497,48 @@ In the example above `secondOption`, because it itself does not have them, will 
 }
 ```
 
+### `ObjectSchema.subRule`
+
+- <`string`>
+
+Only applies where `type` is `'object'`. Schema describing nested object.
+
+Note: If a sub-rule contains a [`required`](#objectschemarequired) rule its parent rules become implicitly `required`, too. Setting `required` to `false` in the parent node causes any `required` sub-rules to fail only if the parent node matched a value.
+
+#### Example
+
+```JavaScript
+const schema1 = {
+  obj: {
+    type: 'object',
+    subRule: {
+      str: {
+        type: 'string',
+        required: true // Implicitly makes `obj` required.
+      }
+    }
+  }
+};
+const schema2 = {
+  obj2: {
+    type: 'object',
+    required: false,
+    subRule: {
+      str: {
+        type: 'string',
+        required: true // Only applies if `obj` matched a value.
+      }
+    }
+  }
+};
+
+validateObject(schema1, { obj: { str: "abc" } }); // true
+validateObject(schema1, { obj: { str: 123   } }); // false
+
+validateObject(schema2, { obj: { str: 123 } }); // false
+validateObject(schema2, { });                   // true
+```
+
 ## `normalizeObject(schema[,obj][, options])`
 
 ### Parameters
@@ -595,7 +639,7 @@ Creates a new function that take an input object as its only argument. When call
 - **schema** <`ObjectSchema`>\
 Object describing the structure of valid objects.
 
-- **options** <`Options`>
+- **options** <`Options`>\
 Note: `skipSchemaExpansion` is ignored as it is required internally.
 
 ### Returns
@@ -609,7 +653,7 @@ Creates a new function that take an input object as its only argument. When call
 - **schema** <`ObjectSchema`>\
 Object describing the structure of valid objects.
 
-- **options** <`Options`>
+- **options** <`Options`>\
 Note: `skipSchemaExpansion` is ignored as it is required internally.
 
 ### Returns

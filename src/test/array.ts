@@ -2,12 +2,12 @@ import type { TestConfig } from 'object_validator';
 
 export const testConfig: TestConfig = {
 	basic: {
-		description: 'Basic',
+		label: 'Basic',
 		arg: [1, 2, 3],
 		decl: {type: 'array'}
 	},
 	filter: {
-		description: 'Filter',
+		label: 'Filter',
 		arg: [1, 2, 3],
 		expect: [, 2, 3],
 		decl: {
@@ -17,7 +17,7 @@ export const testConfig: TestConfig = {
 		}
 	},
 	filter_fail: {
-		description: 'Filter (invalid)',
+		label: 'Filter (invalid)',
 		arg: [1, 2, 3],
 		expect: [],
 		shouldFail: true,
@@ -28,7 +28,7 @@ export const testConfig: TestConfig = {
 		}
 	},
 	filter_cmpct: {
-		description: 'Filter (compacted)',
+		label: 'Filter (compacted)',
 		arg: [1, 2, 3],
 		expect: [2, 3],
 		decl: {

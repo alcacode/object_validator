@@ -2,12 +2,12 @@ import type { TestConfig } from 'object_validator';
 
 export const testConfig: TestConfig = {
         basic: {
-                description: 'Basic',
+                label: 'Basic',
                 arg: 123,
                 decl: { type: 'number' }
         },
         minValValid: {
-                description: 'Minimum value',
+                label: 'Minimum value',
                 arg: 2,
                 decl: {
                         type: 'number',
@@ -15,7 +15,7 @@ export const testConfig: TestConfig = {
                 }
         },
         minValInvalid: {
-                description: 'Minimum value (invalid)',
+                label: 'Minimum value (invalid)',
                 arg: 2,
                 shouldFail: true,
                 decl: {
@@ -24,7 +24,7 @@ export const testConfig: TestConfig = {
                 }
         },
         maxValValid: {
-                description: 'Maximum value',
+                label: 'Maximum value',
                 arg: 2,
                 decl: {
                         type: 'number',
@@ -32,7 +32,7 @@ export const testConfig: TestConfig = {
                 }
         },
         maxValInvalid: {
-                description: 'Maximum value (invalid)',
+                label: 'Maximum value (invalid)',
                 arg: 2,
                 shouldFail: true,
                 decl: {
@@ -41,7 +41,7 @@ export const testConfig: TestConfig = {
                 }
         },
         minMaxValValid: {
-                description: 'Minimum & Maximum value',
+                label: 'Minimum & Maximum value',
                 arg: 2,
                 decl: {
                         type: 'number',
@@ -50,7 +50,7 @@ export const testConfig: TestConfig = {
                 }
         },
         minMaxValInvalid: {
-                description: 'Minimum & Maximum value (invalid)',
+                label: 'Minimum & Maximum value (invalid)',
                 arg: 0,
                 shouldFail: true,
                 decl: {
@@ -60,7 +60,7 @@ export const testConfig: TestConfig = {
                 }
         },
         numFromString: {
-                description: 'String to Number',
+                label: 'String to Number',
                 arg: '123',
                 expect: 123,
                 decl: {
@@ -69,7 +69,7 @@ export const testConfig: TestConfig = {
                 }
         },
         numFromStringInvalid: {
-                description: 'String to Number (invalid)',
+                label: 'String to Number (invalid)',
                 arg: 'aaa',
                 shouldFail: true,
                 decl: {
@@ -78,7 +78,7 @@ export const testConfig: TestConfig = {
                 }
         },
         numFromBigInt: {
-                description: 'BigInt to Number',
+                label: 'BigInt to Number',
                 arg: BigInt(123),
                 expect: 123,
                 decl: {
@@ -87,7 +87,8 @@ export const testConfig: TestConfig = {
                 }
         },
         numFromBoolean: {
-                description: 'Boolean to Number',
+                label: 'Boolean to Number',
+                description: "f: [false, true] -> [0, 1]",
                 arg: true,
                 expect: 1,
                 decl: {

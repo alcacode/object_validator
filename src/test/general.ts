@@ -2,41 +2,42 @@ import type { TestConfig } from 'object_validator';
 
 export const testConfig: TestConfig = {
         basic: {
-                description: 'Basic',
+                label: 'Basic',
+                description: "Tests if the returned value is the same as the input.",
                 arg: 'abc',
                 decl: { type: 'any' }
         },
         missing: {
-                description: 'Optional missing',
+                label: 'Optional missing',
                 shouldFail: true,
                 decl: { type: 'any' }
         },
         missingRequired: {
-                description: 'Required missing',
+                label: 'Required missing',
                 shouldFail: true,
                 shouldThrow: true,
                 decl: { type: 'any', required: true }
         },
         extension: {
-                description: 'Extension',
+                label: 'Extension',
                 arg: 2,
                 expect: 2,
-                decl: { type: 'number', extends: '__numRefTarget' }
+                decl: { extends: '__numRefTarget' }
         },
         macro: {
-                description: 'Macro',
+                label: 'Macro',
                 arg: 2,
                 expect: 2,
                 decl: { macro: '__numRefTarget' }
         },
         macroextends: {
-                description: 'Reference to Macro',
+                label: 'Reference to Macro',
                 arg: 2,
                 expect: 2,
                 decl: { type: 'number', extends: '__numRefTargetMacro' }
         },
         circularSelfextends: {
-                description: 'Circular Self-Reference',
+                label: 'Circular Self-Reference',
                 shouldThrow: true,
                 decl: {
                         type: 'any',
@@ -44,7 +45,7 @@ export const testConfig: TestConfig = {
                 }
         },
         circularReferenceToMacro: {
-                description: 'Circular Reference to Macro',
+                label: 'Circular Reference to Macro',
                 shouldThrow: true,
                 decl: {
                         type: 'any',
@@ -52,7 +53,7 @@ export const testConfig: TestConfig = {
                 }
         },
         circularReferenceToextends: {
-                description: 'Circular Reference to Reference',
+                label: 'Circular Reference to Reference',
                 shouldThrow: true,
                 decl: {
                         type: 'any',
@@ -60,14 +61,14 @@ export const testConfig: TestConfig = {
                 }
         },
         circularMacro: {
-                description: 'Circular Macro',
+                label: 'Circular Macro',
                 shouldThrow: true,
                 decl: {
                         macro: 'circularMacro'
                 }
         },
         referenceErrorextends: {
-                description: 'Non-existent Reference',
+                label: 'Non-existent Reference',
                 shouldThrow: true,
                 decl: {
                         type: 'any',
@@ -75,14 +76,14 @@ export const testConfig: TestConfig = {
                 }
         },
         referenceErrorMacro: {
-                description: 'Non-existent Macro',
+                label: 'Non-existent Macro',
                 shouldThrow: true,
                 decl: {
                         macro: 'ruleThatDoesNotExist'
                 }
         },
         mappedOption: {
-                description: 'Mapped Option',
+                label: 'Mapped Option',
                 arg: 123,
                 decl: {
                         type: 'number',
@@ -90,7 +91,8 @@ export const testConfig: TestConfig = {
                 }
         },
         inheritedValue: {
-                description: 'Inherited Value',
+                label: 'Inherited Value',
+                description: "Attempts to grab 'hasOwnProperty' from the input object's prototype.",
                 expect: Object.prototype.hasOwnProperty,
                 propKey: 'hasOwnProperty',
                 decl: {

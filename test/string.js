@@ -1,11 +1,11 @@
 export const testConfig = {
     basic: {
-        description: 'Basic',
+        label: 'Basic',
         arg: 'abc',
         decl: { type: 'string' }
     },
     stringPattern: {
-        description: 'String Pattern',
+        label: 'String Pattern',
         arg: 'abc11',
         decl: {
             type: 'string',
@@ -13,7 +13,7 @@ export const testConfig = {
         }
     },
     stringPatternInvalid: {
-        description: 'String Pattern Mismatch',
+        label: 'String Pattern Mismatch',
         arg: 'abc111',
         shouldFail: true,
         decl: {
@@ -22,7 +22,7 @@ export const testConfig = {
         }
     },
     stringPatternComplex: {
-        description: 'Complex String Pattern',
+        label: 'Complex String Pattern',
         arg: 'abc 123.456 5......       \n',
         decl: {
             type: 'string',
@@ -30,7 +30,7 @@ export const testConfig = {
         }
     },
     regExpPattern: {
-        description: 'RegExp Pattern',
+        label: 'RegExp Pattern',
         arg: '123@ a',
         decl: {
             type: 'string',
@@ -38,7 +38,7 @@ export const testConfig = {
         }
     },
     regExpPatternInvalid: {
-        description: 'RegExp Pattern Mismatch',
+        label: 'RegExp Pattern Mismatch',
         arg: '123@a',
         shouldFail: true,
         decl: {

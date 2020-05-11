@@ -1,11 +1,11 @@
 export const testConfig = {
     basic: {
-        description: 'Basic',
+        label: 'Basic',
         arg: [1, 2, 3],
         decl: { type: 'array' }
     },
     filter: {
-        description: 'Filter',
+        label: 'Filter',
         arg: [1, 2, 3],
         expect: [, 2, 3],
         decl: {
@@ -15,7 +15,7 @@ export const testConfig = {
         }
     },
     filter_fail: {
-        description: 'Filter (invalid)',
+        label: 'Filter (invalid)',
         arg: [1, 2, 3],
         expect: [],
         shouldFail: true,
@@ -26,7 +26,7 @@ export const testConfig = {
         }
     },
     filter_cmpct: {
-        description: 'Filter (compacted)',
+        label: 'Filter (compacted)',
         arg: [1, 2, 3],
         expect: [2, 3],
         decl: {

@@ -1,11 +1,11 @@
 export const testConfig = {
     basic: {
-        description: 'Basic',
+        label: 'Basic',
         arg: 123,
         decl: { type: 'number' }
     },
     minValValid: {
-        description: 'Minimum value',
+        label: 'Minimum value',
         arg: 2,
         decl: {
             type: 'number',
@@ -13,7 +13,7 @@ export const testConfig = {
         }
     },
     minValInvalid: {
-        description: 'Minimum value (invalid)',
+        label: 'Minimum value (invalid)',
         arg: 2,
         shouldFail: true,
         decl: {
@@ -22,7 +22,7 @@ export const testConfig = {
         }
     },
     maxValValid: {
-        description: 'Maximum value',
+        label: 'Maximum value',
         arg: 2,
         decl: {
             type: 'number',
@@ -30,7 +30,7 @@ export const testConfig = {
         }
     },
     maxValInvalid: {
-        description: 'Maximum value (invalid)',
+        label: 'Maximum value (invalid)',
         arg: 2,
         shouldFail: true,
         decl: {
@@ -39,7 +39,7 @@ export const testConfig = {
         }
     },
     minMaxValValid: {
-        description: 'Minimum & Maximum value',
+        label: 'Minimum & Maximum value',
         arg: 2,
         decl: {
             type: 'number',
@@ -48,7 +48,7 @@ export const testConfig = {
         }
     },
     minMaxValInvalid: {
-        description: 'Minimum & Maximum value (invalid)',
+        label: 'Minimum & Maximum value (invalid)',
         arg: 0,
         shouldFail: true,
         decl: {
@@ -58,7 +58,7 @@ export const testConfig = {
         }
     },
     numFromString: {
-        description: 'String to Number',
+        label: 'String to Number',
         arg: '123',
         expect: 123,
         decl: {
@@ -67,7 +67,7 @@ export const testConfig = {
         }
     },
     numFromStringInvalid: {
-        description: 'String to Number (invalid)',
+        label: 'String to Number (invalid)',
         arg: 'aaa',
         shouldFail: true,
         decl: {
@@ -76,7 +76,7 @@ export const testConfig = {
         }
     },
     numFromBigInt: {
-        description: 'BigInt to Number',
+        label: 'BigInt to Number',
         arg: BigInt(123),
         expect: 123,
         decl: {
@@ -85,7 +85,8 @@ export const testConfig = {
         }
     },
     numFromBoolean: {
-        description: 'Boolean to Number',
+        label: 'Boolean to Number',
+        description: "f: [false, true] -> [0, 1]",
         arg: true,
         expect: 1,
         decl: {

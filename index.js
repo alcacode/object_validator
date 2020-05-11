@@ -196,9 +196,9 @@ function handleRuleError(type, opts, ruleName, subst_0, subst_1) {
     else if (doWarn)
         console.warn(msg);
 }
-function invalid(obj, baseKey, targetKey, rule, reason, options) {
+function invalid(obj, baseKey, targetKey, rule, reason, options, extra) {
     baseKey = String(baseKey);
-    if (options.throwOnInvalid !== true &&
+    if (options.throwOnInvalid !== true && reason !== 12 &&
         (rule.required !== true || (rule.__refs && rule.__refs.length))) {
         if ('defaultValue' in rule &&
             (!(targetKey in obj) ||
@@ -262,6 +262,8 @@ function invalid(obj, baseKey, targetKey, rule, reason, options) {
             if (rule.__pattern)
                 tmp += ` (derived from '${rule.__pattern}')`;
             throw Error(tmp);
+        case 12:
+            throw Error(`Sub-rule '${baseKey}' failed to validate: ${extra === null || extra === void 0 ? void 0 : extra.message}`);
     }
     throw Error(`${prop} is invalid (unknown reason: ${reason})`);
 }
@@ -287,6 +289,15 @@ function getRootMacro(key, schema, opts) {
     }
     return cur !== null && cur !== void 0 ? cur : key;
 }
+function extendRule(target, source, allowOverwrite) {
+    if (allowOverwrite)
+        return Object.assign(target, source);
+    for (const [k, v] of Object.entries(source)) {
+        if (k in target || k === '__isExpanded')
+            continue;
+        target[k] = v;
+    }
+}
 function resolveReference(key, schema, opts) {
     var _a;
     let out = { ...schema[key], __refs: (_a = schema[key].__refs) !== null && _a !== void 0 ? _a : [] };
@@ -295,6 +306,7 @@ function resolveReference(key, schema, opts) {
         cur = getRootMacro(cur, schema, opts);
         const rule = schema[cur];
         if (rule && rule.extends === undefined) {
+            extendRule(out, rule);
             out.__refs.push(cur);
             break;
         }
@@ -317,15 +329,19 @@ function resolveReference(key, schema, opts) {
     delete out.extends;
     return out;
 }
-function expandSchema(schema, opts) {
+function expandSchema(schema, opts, parentChain = []) {
     const out = Object.assign(Object.create(null), schema);
     const refs = Object.create(null);
     for (const k of Object.keys(schema)) {
-        let rule = schema[k];
+        if (out[k].__isExpanded) {
+            out[k] = schema[k];
+            continue;
+        }
+        let rule = out[k];
         if (schema[k].extends && !schema[k].macro) {
             const opt = resolveReference(k, schema, opts);
             if (opt)
-                rule = opt;
+                Object.assign(rule, opt);
         }
         if (!refs[k])
             refs[k] = [];
@@ -343,8 +359,25 @@ function expandSchema(schema, opts) {
             if (!refs[_k].includes(k))
                 refs[_k].push(k);
         }
+        if (rule.required === true) {
+            for (let i = 0; i < parentChain.length; i++) {
+                if (parentChain[i].required === false)
+                    break;
+                parentChain[i].required = true;
+            }
+        }
+        if (isObject(rule.subRule)) {
+            if (rule.type === 'object') {
+                rule.subRule = expandSchema(rule.subRule, opts, Array.prototype.concat(parentChain, rule));
+            }
+            else {
+                if (opts.printWarnings)
+                    console.warn(`Rule '${k}' incorrectly implements subRule: rule type is not 'object'.`);
+                delete rule.subRule;
+            }
+        }
         if (typeof out[k].allowOverride !== 'boolean' && !schema[k].macro)
-            out[k].allowOverride = !schema.allowOverride;
+            out[k].allowOverride = !opts.allowOverride;
         if (rule.type === 'string' && typeof rule.pattern === 'string') {
             rule.__pattern = rule.pattern;
             rule.pattern = createMatchRegExp(rule.pattern);
@@ -354,6 +387,7 @@ function expandSchema(schema, opts) {
                 console.warn(`Rule '${k}' incorrectly implements pattern: rule type is not 'string'.`);
             delete rule.pattern;
         }
+        rule.__isExpanded = true;
     }
     for (const k in refs) {
         if (refs[k].length && !out[k].hasOwnProperty('__refs'))
@@ -512,10 +546,19 @@ export function normalizeObject(schema, obj, options) {
             invalid(out, k, targetKey, rule, 10, opts);
             continue;
         }
-        if ((rule.type === 'object' || rule.type === 'function') && 'instance' in rule) {
+        if ((rule.type === 'object' || rule.type === 'function') && value !== null && 'instance' in rule) {
             if (!isObject(value) ||
                 !(value instanceof rule.instance)) {
                 invalid(out, k, targetKey, rule, 8, opts);
+                continue;
+            }
+        }
+        if (rule.type === 'object' && rule.subRule) {
+            try {
+                value = normalizeObject(rule.subRule, value, opts);
+            }
+            catch (err) {
+                invalid(out, k, targetKey, rule, 12, opts, err);
                 continue;
             }
         }

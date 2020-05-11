@@ -283,11 +283,11 @@ function handleRuleError(type: RULE_ERROR, opts: Options, ruleName: PropertyKey,
 
 function invalid(obj: { [x: string]: any }, baseKey: PropertyKey,
 		 targetKey: PropertyKey, rule: OptionRule, reason: ERRNO,
-		 options: Options): void
+		 options: Options, extra?: Error): void
 {
 	baseKey = String(baseKey);
 
-	if (options.throwOnInvalid !== true &&
+	if (options.throwOnInvalid !== true && reason !== ERRNO.SUB_RULE_MISMATCH &&
 	    (rule.required !== true || (rule.__refs && rule.__refs.length))) {
 		if ('defaultValue' in rule &&
 		    (!(targetKey in obj) ||
@@ -361,6 +361,8 @@ function invalid(obj: { [x: string]: any }, baseKey: PropertyKey,
 			tmp += ` (derived from '${rule.__pattern}')`;
 
 		throw Error(tmp);
+	case ERRNO.SUB_RULE_MISMATCH:
+		throw Error(`Sub-rule '${baseKey}' failed to validate: ${extra?.message}`);
 	}
 
 	throw Error(`${prop} is invalid (unknown reason: ${reason})`);

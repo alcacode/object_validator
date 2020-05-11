@@ -1,13 +1,11 @@
 {
   "name": "object_validator",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Provides object schema validation and normalization through the validateObject() and normalizeObject() functions.",
   "main": "./index.js",
   "directories": {
     "lib": "/",
     "test": "./test"
-  },
-  "dependencies": {
   },
   "devDependencies": {
     "typescript": "next"
@@ -24,5 +22,6 @@
   "author": "alcacode",
   "license": "GPL-2.0-only",
   "types": "./src/@types/object_validator/index.d.ts",
-  "private": true
+  "private": true,
+  "type": "module"
 }

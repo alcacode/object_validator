@@ -620,9 +620,10 @@ const OptionsPrototype: Required<Options> = {
 Object.freeze(OptionsPrototype);
 
 export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: any } = any>(
-	schema: Schema<S>,
+	schema: S,
 	obj?: P,
-	options?: Options): {[k in keyof S]: 'macro' extends keyof S[k] ? undefined :
+	options?: Options): {[k in keyof S]:
+		'macro' extends keyof NonNullable<S[k]> ? unknown :
 		(k extends keyof P ? (P[k] extends typeRetVal<S[k]['type']> ? P[k] : typeRetVal<S[k]['type']>) : typeRetVal<S[k]['type']>) |
 		('defaultValue' extends keyof S[k] ? S[k]['defaultValue'] : (S[k]['required'] extends true ? never : undefined))
 	}

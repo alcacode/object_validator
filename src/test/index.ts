@@ -1,10 +1,10 @@
-import { normalizeObject, validateObject } from '../index';
-import {testConfig as tc_gen} from './general';
-import {testConfig as tc_str} from './string';
-import {testConfig as tc_arr} from './array';
-import {testConfig as tc_arr_like} from './arraylike';
-import {testConfig as tc_num} from './number';
-import type { TestConfig, Schema, Options } from 'object_validator';
+import {normalizeObject, validateObject} from './../index.js';
+import {testConfig as tc_gen} from './general.js';
+import {testConfig as tc_str} from './string.js';
+import {testConfig as tc_arr} from './array.js';
+import {testConfig as tc_arr_like} from './arraylike.js';
+import {testConfig as tc_num} from './number.js';
+import type {TestConfig, Schema, Options} from 'object_validator';
 
 /**
  * If `true` logs exception error stack (if it exist). If `false` only print

@@ -456,18 +456,24 @@ declare type ObjectOf<T> = (
 );
 
 /** Returns the expanded schema based on `schema`. */
-function expandSchema<T extends Schema = {}, K extends string & keyof T = string & keyof T>(schema: T, opts: Options): T
+function expandSchema<T extends Schema, K extends string = string & keyof T>(schema: T, opts: Options, parentChain: OptionRule[] = []): T
 {
 	const out = Object.assign(Object.create(null), schema) as Schema;
 	const refs: ObjectOf<K[]> = Object.create(null);
 
 	for (const k of Object.keys(schema) as K[]) {
-		let rule: OptionRule = schema[k];
+		if (out[k].__isExpanded) {
+			out[k] = schema[k];
+			continue;
+		}
+
+		let rule: OptionRule = out[k];
 
 		if (schema[k].extends && !schema[k].macro) {
 			const opt = resolveReference<T, K>(k, schema, opts);
+
 			if (opt)
-				rule = opt;
+				Object.assign(rule, opt);
 		}
 
 		if (!refs[k])
@@ -489,8 +495,29 @@ function expandSchema<T extends Schema = {}, K extends string & keyof T = string
 				refs[_k].push(k);
 		}
 
+		// A required rule implies that its dependencies are, too.
+		if (rule.required === true) {
+			for (let i = 0; i < parentChain.length; i++) {
+				if (parentChain[i].required === false)
+					break;
+
+				parentChain[i].required = true;
+			}
+		}
+
+		if (isObject(rule.subRule)) {
+			if (rule.type === 'object') {
+				rule.subRule = expandSchema(rule.subRule, opts, Array.prototype.concat(parentChain, rule));
+			} else {
+				if (opts.printWarnings)
+					console.warn(`Rule '${k}' incorrectly implements subRule: rule type is not 'object'.`);
+
+				delete rule.subRule;
+			}
+		}
+
 		if (typeof out[k].allowOverride !== 'boolean' && !schema[k].macro)
-			out[k].allowOverride = !schema.allowOverride;
+			out[k].allowOverride = !opts.allowOverride;
 
 		if (rule.type === 'string' && typeof rule.pattern === 'string') {
 			rule.__pattern = rule.pattern;
@@ -501,6 +528,8 @@ function expandSchema<T extends Schema = {}, K extends string & keyof T = string
 
 			delete (rule as OptionRuleString).pattern;
 		}
+
+		rule.__isExpanded = true;
 	}
 
 	for (const k in refs) {

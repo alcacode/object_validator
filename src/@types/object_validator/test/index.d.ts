@@ -1,16 +1,24 @@
-import type { OptionRule } from 'object_validator';
-
 declare module 'object_validator' {
         export interface TestConfigItem {
                 /**
-                 * Concise describing what is being tested. Values
+                 * Concise label describing what is being tested. Values
                  * longer than 48 characters are trimmed.
+                 */
+                label?: string;
+
+                /**
+                 * Description of test shown when a test result is expanded.
                  */
                 description?: string;
 
                 /**
-                 * Argument to provide during testing.
-                 * @see `Function.prototype.apply()`
+                 * Value of property being tested to provide during testing.
+                 * If not set, input will be an object literal with no
+                 * properties.
+                 * 
+                 * ```JavaScript
+                 * { [propertyKey]: arg }
+                 * ```
                  */
                 arg?: any;
 

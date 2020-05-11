@@ -199,10 +199,28 @@ declare module 'object_validator'
 		allowInherited?: boolean;
 
 		/** 
+		 * Parent rule of sub-rule.
+		 * @internal
+		 */
+		__parent?: OptionRule;
+
+		/** 
 		 * Reference chain of expanded rule.
 		 * @internal
 		 */
 		__refs?: string[];
+
+		/** @internal */
+		subRule?: RuleObject;
+
+		/**
+		 * Indicates that the rule has been parsed. Used internally
+		 * for recursive rules.
+		 * @see subRule
+		 * @private
+		 * @internal
+		 */
+		__isExpanded?: boolean;
 	}
 
 	export interface OptionRuleBoolean extends OptCoerceType {
@@ -237,7 +255,12 @@ declare module 'object_validator'
 
 	export interface OptionRuleObject extends OptLength, OptInstance,
 						  OptCompactArrayLike {
-		type: 'object'|'arraylike';
+		type: 'object' | 'arraylike';
+		subRule?: RuleObject;
+	}
+
+	export interface OptionSubRule {
+		__parent: OptionRule;
 	}
 
 	export interface OptionRuleFunction extends OptLength, OptInstance {
@@ -250,7 +273,7 @@ declare module 'object_validator'
 	}
 
 	export interface OptionRuleNumber extends OptRange, OptCoerceType {
-		type: 'number'|'int';
+		type: 'number' | 'int';
 
 		/** If `true`, reject non-integer values. */
 		notFloat?: boolean;
@@ -279,7 +302,8 @@ declare module 'object_validator'
 		(OptionRuleObject|OptionRuleString|OptionRuleFunction|
 		 OptionRuleUndefined|OptionRuleNumber|OptionRuleBigint|
 		 OptionRuleBoolean|OptionRuleArray|OptionRuleSymbol|
-		 OptionRuleNull|OptionRuleAny|OptionRuleMacro|OptionRuleExtends);
+		 OptionRuleNull|OptionRuleAny|OptionRuleMacro|
+		 OptionRuleExtends);
 
 	export type Schema<O extends RuleObject = RuleObject> = {
 		[P in keyof O]: O[P] & OptionRule
@@ -303,7 +327,8 @@ declare module 'object_validator'
 		INVALID_INSTANCE,
 		UNEXPECTED_VALUE,
 		NOT_ARRAY_LIKE,
-		PATTERN_MISMATCH
+		PATTERN_MISMATCH,
+		SUB_RULE_MISMATCH
 	}
 
 	export const enum COERCE_TYPE {BIGINT, BOOLEAN, NUMBER, STRING}

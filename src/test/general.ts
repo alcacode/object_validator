@@ -99,5 +99,65 @@ export const testConfig: TestConfig = {
                         type: 'function',
                         allowInherited: true
                 }
+        },
+        subRule: {
+                label: 'Sub-rule',
+                arg: { a: 1 },
+                decl: {
+                        type: 'object',
+                        subRule: {
+                                a: {
+                                        type: 'any',
+                                        required: true
+                                }
+                        }
+                }
+        },
+        subSubRule: {
+                label: 'Sub-rule inception',
+                description: "Tests sub rules in sub rules.",
+                arg: { a: { a: "a" } },
+                decl: {
+                        type: 'object',
+                        subRule: {
+                                a: {
+                                        type: 'object',
+                                        subRule: {
+                                                a: {
+                                                        type: 'string',
+                                                        required: true
+                                                }
+                                        }
+                                }
+                        }
+                }
+        },
+        subRuleReq: {
+                label: 'Sub-rule required propagation',
+                description: "Tests downward propagation of the 'required' rule.",
+                shouldThrow: true,
+                decl: {
+                        type: 'object',
+                        subRule: {
+                                a: {
+                                        type: 'any',
+                                        required: true
+                                }
+                        }
+                }
+        },
+        subRuleReqNoProp: {
+                label: 'Sub-rule parent-dependant require',
+                description: "Tests downward propagation prevention of the 'required' rule.",
+                decl: {
+                        type: 'object',
+                        required: false,
+                        subRule: {
+                                a: {
+                                        type: 'any',
+                                        required: true
+                                }
+                        }
+                }
         }
 };

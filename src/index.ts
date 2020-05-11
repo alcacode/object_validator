@@ -742,6 +742,15 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 			}
 		}
 
+		if (rule.type === 'object' && rule.subRule) {
+			try {
+				value = normalizeObject(rule.subRule, value, opts);
+			} catch(err) {
+				invalid(out, k, targetKey, rule, ERRNO.SUB_RULE_MISMATCH, opts, err);
+				continue;
+			}
+		}
+
 		/* Pattern matching. */
 		if (rule.type === 'string' && rule.pattern && !(rule.pattern as RegExp).test(value)) {
 			invalid(out, k, targetKey, rule, ERRNO.PATTERN_MISMATCH, opts);
@@ -823,7 +832,6 @@ export function
 export function createNormalizer<S extends Schema, P extends { [k in keyof S]?: any }>(schema: S, options?: Options): (obj?: P) => ReturnType<typeof normalizeObject> {
 	const _options = Object.assign({}, options, { skipSchemaExpansion: true });
 	const _schema  = expandSchema(schema, _options);
-
 	return (obj?: P) => normalizeObject(_schema, obj, _options);
 }
 

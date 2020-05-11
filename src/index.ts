@@ -396,6 +396,18 @@ function getRootMacro<T extends PropertyKey>(key: T, schema: Schema<any>, opts: 
 	return cur ?? key;
 }
 
+function extendRule(target: OptionRule, source: OptionRule, allowOverwrite?: boolean) {
+	if (allowOverwrite)
+		return Object.assign(target, source);
+
+	for (const [k, v] of Object.entries(source)) {
+		if (k in target || k === '__isExpanded')
+			continue;
+
+		target[k as keyof typeof target] = v;
+	}
+}
+
 function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(key: string & K, schema: O, opts: Options): (O[K] & OptionRule) | undefined {
 	let out = {...schema[key], __refs: schema[key].__refs ?? []};
 	Object.defineProperty(out, '__refs', { enumerable: false });
@@ -405,6 +417,7 @@ function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(ke
 
 		const rule: OptionRule = schema[cur];
 		if (rule && rule.extends === undefined) {
+			extendRule(out, rule);
 			out.__refs.push(cur);
 			break;
 		} else if (rule === undefined || !(rule.extends! in schema)) {

@@ -58,8 +58,13 @@ function centerAndPad(str: string, fillString: string)
 
 function getPrototype<T extends any>(obj: T)
 {
+	if (obj === undefined || obj === null)
+		return;
+
 	if (typeof obj === 'number')
 		return Number;
+	if (typeof obj === 'bigint')
+		return BigInt;
 
 	if ('prototype' in obj)
 		return obj.prototype;
@@ -70,13 +75,6 @@ function getPrototype<T extends any>(obj: T)
 	// Likely is Object created by Object.create(null).
 	if (typeof obj === 'object')
 		return null;
-
-	return undefined;
-}
-
-function isObject(arg: any): arg is object
-{
-	return arg !== null && (typeof arg === 'object' || (arg instanceof Object));
 }
 
 /**
@@ -85,26 +83,41 @@ function isObject(arg: any): arg is object
  */
 function partiallyEQ(a: any, b: any): boolean
 {
-	if (a === b || (Number.isNaN(a) && Number.isNaN(b)))
+	if (a === b)
 		return true;
 
-	if (typeof a !== typeof b || (a === null && b !== null) || (a !== null && b === null))
-		return false;
+	const aType = typeof a;
+	const bType = typeof b;
+	if (a === undefined    || b === undefined    || aType === 'bigint' ||
+	    bType === 'bigint' || aType === 'string' || bType === 'string' ||
+	    aType === 'symbol' || bType === 'symbol')
+		return a === b;
 
-	if ((a === null && b === undefined) || (a === undefined && b === null))
+	// NaN is a special case as it's not equal to itself.
+	if (aType === 'number' || bType === 'number') {
+		if (aType === 'number' && bType === 'number' &&
+		    Number.isNaN(a) && Number.isNaN(b))
+			return true;
+
+		return a === b;
+	}
+
+	// Get rid of null-values early or they'll cause problems later on.
+	if (aType !== bType || (a === null && b !== null) ||
+	    (a !== null && b === null))
 		return false;
 
 	const aProto = getPrototype(a);
 	const bProto = getPrototype(b);
 
 	// Treat null-prototype objects as ordinary object literals.
-	if (isObject(a) && isObject(b) && !(aProto === bProto || (aProto === null && bProto === Object) || (bProto === null && aProto === Object)))
-		return false;
-	if (aProto !== bProto)
+	if (aProto !== bProto && (aProto !== null && bProto !== Object.prototype) &&
+	    (bProto !== null && aProto !== Object.prototype))
 		return false;
 
 	const aProps = Object.getOwnPropertyDescriptors(a);
 	const bProps = Object.getOwnPropertyDescriptors(b);
+
 	for (const k in aProps) {
 		if (!aProps.hasOwnProperty(k))
 			continue;
@@ -115,12 +128,11 @@ function partiallyEQ(a: any, b: any): boolean
 		if (aProps[k].configurable !== bProps[k].configurable ||
 		    aProps[k].enumerable   !== bProps[k].enumerable   ||
 		    aProps[k].writable     !== bProps[k].writable     ||
-		    aProps[k].value        !== bProps[k].value	      ||
 		    aProps[k].get          !== bProps[k].get	      ||
-		    aProps[k].set          !== bProps[k].set) {
+		    aProps[k].set          !== bProps[k].set	      ||
+		    !partiallyEQ(a[k], b[k]))
 			return false;
 		}
-	}
 
 	// Check for additional properties in b.
 	for (const k in bProps) {

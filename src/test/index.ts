@@ -153,16 +153,67 @@ const vTestDecl: Schema = {
 	a: { type: 'number', required: true },
 	b: { extends: 'a', required: false }
 };
+const miscTests = {
+	getPrototype_objLit() {
+		return getPrototype({}) === Object.prototype;
+	},
+	getPrototype_objNullProto() {
+		return getPrototype(Object.create(null)) === null;
+	},
+	getPrototype_arrLit() {
+		return getPrototype([]) === Array.prototype;
+	},
+	getPrototype_class() {
+		class _b extends Array {
+		};
+		return getPrototype(new _b()) === _b.prototype;
+	},
+	partiallyEQ_eqArrLit() {
+		return partiallyEQ([1,2,3], [1,2,3]) === true;
+	},
+	partiallyEQ_neqArrLit() {
+		return partiallyEQ([1,2,3], [3,2,1]) === false;
+	},
+	partiallyEQ_eqObj() {
+		return partiallyEQ({a: 1}, {a: 1}) === true;
+	},
+	partiallyEQ_neqObj() {
+		return partiallyEQ({a: 1}, {a: 2}) === false;
+	},
+	partiallyEQ_objLitAndNullObj() {
+		return partiallyEQ({ a: 1 }, Object.create(null, {
+			       a: {
+				       value: 1,
+				       enumerable: true,
+				       writable: true,
+				       configurable: true
+			       }
+		       })) === true;
+	},
+	partiallyEQ_objLitDifDescriptor() {
+		const o = {a: 1};
+		Object.defineProperty(o, 'a', { writable: false });
+		return partiallyEQ({a: 1}, o) === false;
+	},
+	validateValidObject() {
+		return validateObject(vTestDecl, { a: 1 }) === true;
+	},
+	validateInvalidObject() {
+		return validateObject(vTestDecl, { b: 1 }) === false
+	}
+};
+
+/** [passed, failed] */
 let resCount = [0, 0];
 
-const validate_test_1 = validateObject(vTestDecl, { a: 1 }) === true;
-const validate_test_2 = validateObject(vTestDecl, { b: 1 }) === false;
-
-resCount[validate_test_1 ? 0 : 1]++;
-resCount[validate_test_2 ? 0 : 1]++;
-
-console.log(`Passed validateObject returns true: `, validate_test_1);
-console.log(`Failed validateObject returns false:`, validate_test_2);
+console.log(); // New line.
+console.groupCollapsed(centerAndPad(` MISC `, '='));
+for (const [key, test] of Object.entries(miscTests)) {
+	const res = test();
+	console.log(`${key.padEnd(49, ' ')} [${res ? 'PASS' : 'FAIL'}]`);
+	resCount[res ? 0 : 1]++;
+}
+console.groupEnd();
 
 for (const ck in tests) {
 	console.log();

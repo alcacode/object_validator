@@ -16,9 +16,9 @@ Remove need for declarations containing only a `type` rule.
 
 ---
 
-## Type-dependant Rules
+## Multi-type Rules
 
-Allow multiple rules targeting different types.
+Allow multiple rules targeting different types for the same property.
 
 ```JavaScript
 {

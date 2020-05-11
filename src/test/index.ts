@@ -19,7 +19,7 @@ const LOG_ERROR_STACK = false;
 const EXPAND_ALL = false;
 const OUTPUT_MAX_LENGTH = 60;
 
-const tests: { [key: string]: TestConfig } = {
+const normalizationTests: { [key: string]: TestConfig } = {
 	any: tc_gen,
 	string: tc_str,
 	array: tc_arr,
@@ -132,7 +132,7 @@ function partiallyEQ(a: any, b: any): boolean
 		    aProps[k].set          !== bProps[k].set	      ||
 		    !partiallyEQ(a[k], b[k]))
 			return false;
-		}
+	}
 
 	// Check for additional properties in b.
 	for (const k in bProps) {
@@ -149,6 +149,7 @@ const O: Options = {
 	throwOnUnrecognized: true,
 	throwOnInvalid: false
 };
+
 const vTestDecl: Schema = {
 	a: { type: 'number', required: true },
 	b: { extends: 'a', required: false }
@@ -215,13 +216,13 @@ for (const [key, test] of Object.entries(miscTests)) {
 }
 console.groupEnd();
 
-for (const ck in tests) {
-	console.log();
+for (const ck in normalizationTests) {
+	console.log(); // New line.
 	console.groupCollapsed(centerAndPad(` ${ck.toUpperCase()} `, '='));
 
-	for (const tk in tests[ck]) {
-		const pKey = (tests[ck][tk].propKey || tk) as string;
-		const t = tests[ck][tk];
+	for (const tk in normalizationTests[ck]) {
+		const pKey = (normalizationTests[ck][tk].propKey || tk) as string;
+		const t = normalizationTests[ck][tk];
 		const decl: Schema = {
 			[pKey]: t.decl,
 			__numRefTarget: {
@@ -250,9 +251,9 @@ for (const ck in tests) {
 		if ('arg' in t)
 			inputObj[pKey] = t.arg;
 
-		let descStr = (t.description || pKey).substring(0, 48);
-		if (t.description && t.description.length >= 48)
-			descStr += '…'; // <- One character.
+		let _label = (t.label || pKey).substring(0, 48);
+		if (t.label && t.label.length >= 48)
+			_label += '…'; // <- One character.
 
 		let res: Schema<any> = Object.create(null);
 		let didParse = false;
@@ -283,34 +284,35 @@ for (const ck in tests) {
 		resCount[didPass ? 0 : 1] += 1;
 
 		if (!didPass || EXPAND_ALL) {
-			console.log(`\n> ${descStr.padEnd(46, ' ')} [%c${didPass ? 'PASSED' : 'FAILED'}]`, `color:${didPass ? 'green' : 'red'};font-weight:600;`);
+			console.log(`\n> ${_label.padEnd(47, ' ')} [%c${didPass ? 'PASS' : 'FAIL'}]`, `color:${didPass ? 'green' : 'red'};font-weight:600;`);
+			if (t.description)
+				printDesc(t.description + '\n', 56);
+
 			console.log('Input:          ', (inputObj ? inputObj : '<no argument>'));
 			console.log('Output:         ', didParse ? res[propKey] : '<no return value>');
 			console.log('Property Key:   ', didParse ? propKey : '<no return value>');
-			console.log('Expected Value: ', t.shouldThrow ? 'N/A' : expect ? expect : '<no return value>');
-			console.log('Should Fail:    ', t.shouldFail ? 'Yes' : 'No');
+			console.log('Expected Value: ', t.shouldThrow ? '<exception>' : expect ? expect : '<no return value>');
+			console.log('Should Fail:    ', t.shouldFail ?  'Yes' : 'No');
 			console.log('Should Throw:   ', t.shouldThrow ? 'Yes' : 'No');
 
 			if (didParse)
 				console.log('Full Output:    ', res);
 
-			let resStr = `Result:          %c${didPass ? 'PASSED' : 'FAILED'}%c`;
+			let resStr = `Result:          %c${didPass ? 'PASS' : 'FAIL'}%c`;
 			if (!didParse)
 				resStr += `, exception${errMsg ? ` %c(${errMsg})` : ''}`;
 			else if (!(propKey in res))
 				resStr += ', option discarded';
 			else if (!gotExpected)
-				resStr += `, unexpected value. Expected ${t.expect ? t.expect : 'no return value'}, got ${res[propKey] ? t.expect : 'no return value'}.`;
+				resStr += `, unexpected value. Expected '${expect ? expect : 'no return value'}', got '${res[propKey] ? expect : 'no return value'}'.`;
 
 			console.log(resStr + '\n', `color:${didPass ? 'green' : 'red'};font-weight:600;`, '', '');
 		} else {
-			console.log(`${descStr.padEnd(48, ' ')} [PASSED]`);
+			console.log(`${_label.padEnd(49, ' ')} [PASS]`);
 		}
 	}
 
 	console.groupEnd();
 }
 
-const totalRes = resCount[0] + resCount[1];
-console.log(`Passed: ${resCount[0]} / ${totalRes}`);
-console.log(`\nFinal result: ${resCount[0] === totalRes ? 'PASS' : 'FAIL'}`);
+console.log(`\nPassed: ${resCount[0]} / ${resCount[0] + resCount[1]}`);

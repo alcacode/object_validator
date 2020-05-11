@@ -273,13 +273,15 @@ declare module 'object_validator'
 	export type CoercableOptionRuleType = OptionRuleBase&
 		{type: CoercableTypes};
 
+	export type RuleObject = { [key: string]: OptionRule };
+
 	export type OptionRule = OptionRuleBase &
 		(OptionRuleObject|OptionRuleString|OptionRuleFunction|
 		 OptionRuleUndefined|OptionRuleNumber|OptionRuleBigint|
 		 OptionRuleBoolean|OptionRuleArray|OptionRuleSymbol|
 		 OptionRuleNull|OptionRuleAny|OptionRuleMacro|OptionRuleExtends);
 
-	export type Schema<O extends { [key: string]: OptionRule } = { [x:string]: OptionRule }> = {
+	export type Schema<O extends RuleObject = RuleObject> = {
 		[P in keyof O]: O[P] & OptionRule
 	}
 
@@ -378,7 +380,7 @@ declare module 'object_validator'
 		throwOnInvalid?: boolean;
 	}
 
-	export function normalizeObject<O extends { [key: string]: OptionRule }, P extends { [k in keyof O]?: any } = any>(
+	export function normalizeObject<O extends RuleObject, P extends { [k in keyof O]?: any } = any>(
 		schema: Schema<O>,
 		obj?: P,
 		options?: Options): {[k in keyof O]: 'macro' extends keyof O[k] ? undefined :
@@ -386,7 +388,7 @@ declare module 'object_validator'
 			('defaultValue' extends keyof O[k] ? O[k]['defaultValue'] : (O[k]['required'] extends true ? never : undefined))
 		};
 
-	export function validateObject<O extends { [key: string]: OptionRule }, P extends { [k in keyof O]?: any } = any>(
+	export function validateObject<O extends RuleObject, P extends { [k in keyof O]?: any } = any>(
 		schema: Schema<O>,
 		obj?: P,
 		options?: Options): boolean;

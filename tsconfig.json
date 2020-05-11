@@ -1,8 +1,10 @@
 {
+        "compileOnSave": true,
         "compilerOptions": {
                 "target": "es2018",
-                "baseUrl": "/",
+                "baseUrl": ".",
                 "module": "ESNext",
+                "moduleResolution": "node",
                 "esModuleInterop": true,
                 "sourceMap": false,
                 "noImplicitAny": true,

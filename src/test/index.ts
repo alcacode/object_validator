@@ -27,6 +27,27 @@ const tests: { [key: string]: TestConfig } = {
 	number: tc_num,
 };
 
+function printDesc(desc: string, maxLength: number) {
+	let buf = '';
+	let lastBreakPoint = 0;
+	for (let i = 0; i < desc.length; i++) {
+		if (desc[i] === ' ' || desc[i] === '\n' || desc[i] === '\r' ||
+		    desc[i] === '-') {
+			lastBreakPoint = i;
+		}
+
+		buf += desc[i];
+		if (buf.length >= maxLength) {
+			const l = lastBreakPoint - i + buf.length;
+			console.log(buf.slice(0, l).trimEnd());
+			buf = buf.slice(l).trim();
+		}
+	}
+
+	if (buf)
+		console.log(buf);
+}
+
 function centerAndPad(str: string, fillString: string)
 {
 	const l1 = Math.floor((OUTPUT_MAX_LENGTH + str.length) / 2);

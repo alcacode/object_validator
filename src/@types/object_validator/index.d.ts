@@ -285,6 +285,9 @@ declare module 'object_validator'
 		type: 'bigint';
 	}
 
+	/** Returns the expected return type for a given OptionRule. */
+	export type OptionRuleReturnType<T> = T extends (infer R & OptionRuleBase) ? OptionRuleRetType<R> : never;
+
 	export type CoercableTypes = ('bigint'|'boolean'|'number'|'string');
 	export type CoercableOptionRuleType = OptionRuleBase&
 		{type: CoercableTypes};
@@ -340,6 +343,22 @@ declare module 'object_validator'
 		T extends 'function' ? (...args: any[]) => any :
 		T
 	) : unknown;
+
+	type OptionRuleRetType<T> = T extends OptionRule ? (
+		T extends OptionRuleAny       ? any       :
+		T extends OptionRuleArray     ? any[]     :
+		T extends OptionRuleBigint    ? bigint    :
+		T extends OptionRuleBoolean   ? boolean   :
+		T extends OptionRuleExtends   ? unknown   :
+		T extends OptionRuleFunction  ? Function  :
+		T extends OptionRuleMacro     ? unknown   :
+		T extends OptionRuleNull      ? null      :
+		T extends OptionRuleNumber    ? number    :
+		T extends OptionRuleObject    ? object    :
+		T extends OptionRuleString    ? string    :
+		T extends OptionRuleSymbol    ? symbol    :
+		T extends OptionRuleUndefined ? undefined : never
+	): unknown;
 
 	export interface Options {
 		/**

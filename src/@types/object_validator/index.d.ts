@@ -111,73 +111,6 @@ declare module 'object_validator'
 
 	export interface OptionRuleBase extends OptTransform {
 		/**
-		 * If `true` throw an exception if value is missing or
-		 * invalid.
-		 */
-		required?: boolean;
-
-		/**
-		 * Value used to replace missing or invalid values
-		 * with.\ Ignored if `required` is `true`.
-		 */
-		defaultValue?: any;
-
-		/**
-		 * If present, pass value as argument to `passTest` and
-		 * reject those
-		 * where the return value is not `true`.\
-		 * If the value is iterable then member items will be
-		 * passed individually.
-		 *
-		 * This behavior can be overriden by `passFull`.
-		 */
-		passTest?: (value: any) => boolean;
-
-		/**
-		 * Pass the entire value to `passTest` regardless of
-		 * type. Default: `false`.
-		 */
-		testFullValue?: boolean;
-
-		/**
-		 * Replace `string` and `object` values with the
-		 * intersection of the set of given values and the set
-		 * of possible valid values. Default: `false`.
-		 */
-		allowPartialPass?: boolean;
-
-		/**
-		 * Use the rules of another rule and map output to it.
-		 * _All_ other rules are discarded if set. If the
-		 * referenced rule does not exist, a warning message
-		 * will be printed and the property will be discarded.
-		 */
-		macro?: PropertyKey;
-
-		/**
-		 * Inherit rules from another rule. Settings defined on the
-		 * extending rule take precedence over inherited rules. If the
-		 * referenced rule does not exist or forms a circular reference,
-		 * a warning will be printed and the property will be discarded.
-		 */
-		extends?: PropertyKey;
-
-		/**
-		 * Map property to a different property key in the output
-		 * object.
-		 */
-		mapTo?: PropertyKey;
-
-		/**
-		 * If `true`, a mapped property may overwrite the property
-		 * it is mapped to (the last valid value is used). If
-		 * `false`, a mapped property is only used when the
-		 * property it is mapped to is either missing or invalid.
-		 * Defaults to the value of the global `allowOverride`.
-		 */
-		allowOverride?: boolean;
-
-		/**
 		 * If `true`, extends property search to include the input
 		 * object's prototype chain.
 		 * 
@@ -196,13 +129,83 @@ declare module 'object_validator'
 		 */
 		allowInherited?: boolean;
 
+		/**
+		 * If `true`, a mapped property may overwrite the property
+		 * it is mapped to (the last valid value is used). If
+		 * `false`, a mapped property is only used when the
+		 * property it is mapped to is either missing or invalid.
+		 * Defaults to the value of the global `allowOverride`.
+		 */
+		allowOverride?: boolean;
+
+		/**
+		 * Replace `string` and `object` values with the
+		 * intersection of the set of given values and the set
+		 * of possible valid values. Default: `false`.
+		 */
+		allowPartialPass?: boolean;
+
+		/**
+		 * Value used to replace missing or invalid values
+		 * with.\ Ignored if `required` is `true`.
+		 */
+		defaultValue?: any;
+
+		/**
+		 * Inherit rules from another rule. Settings defined on the
+		 * extending rule take precedence over inherited rules. If the
+		 * referenced rule does not exist or forms a circular reference,
+		 * a warning will be printed and the property will be discarded.
+		 */
+		extends?: PropertyKey;
+
+		/**
+		 * Use the rules of another rule and map output to it.
+		 * _All_ other rules are discarded if set. If the
+		 * referenced rule does not exist, a warning message
+		 * will be printed and the property will be discarded.
+		 */
+		macro?: PropertyKey;
+
+		/**
+		 * Map property to a different property key in the output
+		 * object.
+		 */
+		mapTo?: PropertyKey;
+
+		/**
+		 * If present, pass value as argument to `passTest` and
+		 * reject those
+		 * where the return value is not `true`.\
+		 * If the value is iterable then member items will be
+		 * passed individually.
+		 *
+		 * This behavior can be overriden by `passFull`.
+		 */
+		passTest?: (value: any) => boolean;
+
+		/**
+		 * If `true` throw an exception if value is missing or
+		 * invalid.
+		 */
+		required?: boolean;
+
+		/**
+		 * Pass the entire value to `passTest` regardless of
+		 * type. Default: `false`.
+		 */
+		testFullValue?: boolean;
+
 		/** 
 		 * Reference chain of expanded rule.
 		 * @internal
 		 */
 		__refs?: string[];
 
-		/** @internal */
+		/**
+		 * @internal
+		 * @see OptionRuleObject
+		 */
 		subRule?: RuleObject;
 
 		/**

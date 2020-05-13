@@ -301,7 +301,7 @@ declare module 'object_validator'
 		 OptionRuleNull|OptionRuleAny|OptionRuleMacro|
 		 OptionRuleExtends);
 
-	export type Schema<O extends RuleObject = RuleObject> = {
+	export type Schema<O extends RuleObject = any> = {
 		[P in keyof O]: O[P] & OptionRule
 	}
 
@@ -415,14 +415,16 @@ declare module 'object_validator'
 		throwOnInvalid?: boolean;
 	}
 
-	export type InputObject<S extends Schema> = { [k in keyof S]?: any };
+	export type InputObject<S extends Schema = any> = { [k in keyof S]?: any };
 
-	export function normalizeObject<O extends RuleObject, P extends { [k in keyof O]?: any } = any>(
-		schema: Schema<O>,
+	export function normalizeObject<S extends Schema, P extends InputObject<S> = any>(
+		schema: S,
 		obj?: P,
-		options?: Options): {[k in keyof O]: 'macro' extends keyof O[k] ? undefined :
-			(k extends keyof P ? (P[k] extends typeRetVal<O[k]['type']> ? P[k] : typeRetVal<O[k]['type']>) : typeRetVal<O[k]['type']>) |
-			('defaultValue' extends keyof O[k] ? O[k]['defaultValue'] : (O[k]['required'] extends true ? never : undefined))
+		options?: Options): {
+			[k in keyof S]: 'macro' extends keyof S[k] ? unknown :
+			(k extends keyof P ? (P[k] extends typeRetVal<S[k]['type']> ? P[k] : typeRetVal<S[k]['type']>) : typeRetVal<S[k]['type']>) |
+			('defaultValue' extends keyof S[k] ? S[k]['defaultValue'] :
+				('required' extends keyof S[k] ? (true extends S[k]['required'] ? never : undefined) : undefined))
 		};
 
 	export function validateObject<O extends RuleObject, P extends { [k in keyof O]?: any } = any>(

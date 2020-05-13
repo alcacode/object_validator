@@ -6,27 +6,6 @@ declare module 'object_validator'
 
 	export type MacroTypes = ('any'|'array'|'null'|'int'|'arraylike');
 
-	export interface OptTransform<T = any> {
-		/**
-		 * If present and type does not match type of value,
-		 * replace value with the return value of `onWrongType`
-		 * called with itself as the
-		 * first argument.\
-		 * \
-		 * Note: `onWrongType` is called _before_ `transformFn`.
-		 */
-		onWrongType?: (value: any) => T;
-
-		/**
-		 * If present, replace value with the return value of
-		 * `transformFn` called with itself as the first
-		 *  argument.\
-		 * \
-		 * Note: `transformFn` is called _after_ `onWrongType`.
-		 */
-		transformFn?: (value: any) => T;
-	}
-
 	export interface OptLength {
 		/**
 		 * Maximum allowed length. Ignored if value lacks a
@@ -109,7 +88,7 @@ declare module 'object_validator'
 		__pattern?: string;
 	}
 
-	export interface OptionRuleBase extends OptTransform {
+	export interface OptionRuleBase {
 		/**
 		 * If `true`, extends property search to include the input
 		 * object's prototype chain.
@@ -174,6 +153,16 @@ declare module 'object_validator'
 		mapTo?: PropertyKey;
 
 		/**
+		 * If present and type does not match type of value,
+		 * replace value with the return value of `onWrongType`
+		 * called with itself as the
+		 * first argument.\
+		 * \
+		 * Note: `onWrongType` is called _before_ `transformFn`.
+		 */
+		onWrongType?: (value: any) => OptionRuleReturnType<this>;
+
+		/**
 		 * If present, pass value as argument to `passTest` and
 		 * reject those
 		 * where the return value is not `true`.\
@@ -195,6 +184,15 @@ declare module 'object_validator'
 		 * type. Default: `false`.
 		 */
 		testFullValue?: boolean;
+
+		/**
+		 * If present, replace value with the return value of
+		 * `transformFn` called with itself as the first
+		 *  argument.\
+		 * \
+		 * Note: `transformFn` is called _after_ `onWrongType`.
+		 */
+		transformFn?: (value: any) => OptionRuleReturnType<this>;
 
 		/** 
 		 * Reference chain of expanded rule.

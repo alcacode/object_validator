@@ -11,11 +11,10 @@ import {
 	OptionRuleString,
 	BaseTypes,
 	Options,
-	typeRetVal,
 	CoercableOptionRuleType,
 	CoercableTypes,
 	OptCoerceType,
-	InputObject
+	InputObject,
 } from 'object_validator';
 
 const MAX_REFERENCE_DEPTH = 16;
@@ -100,8 +99,7 @@ function coerceType(value: any, toType: CoercableTypes) {
 		let v: BigInt | null = null;
 		try {
 			v = BigInt(ToNumber(value));
-		} catch(err) { /* Intentionally left empty. */
-		}
+		} catch(err) { /* Intentionally left empty. */ }
 
 		return v;
 	}
@@ -448,7 +446,7 @@ function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(ke
 	return out;
 }
 
-declare type ObjectOf<T> = (
+type ObjectOf<T> = (
 	{ [key: string]: T } &
 	{ [key: number]: T } &
 	// Workaround for TS insisting that Symbols can't index Objects.
@@ -571,14 +569,9 @@ function evalTestFn(val: any, fn?: (arg: any) => boolean, passFull?: boolean,
 			tmp = new (SpeciesConstructor(val, Object));
 	}
 
-	let validIndicies: Set<any> = new Set();
+	const validIndicies: Set<any> = new Set();
+	const entries = isMapOrSet ? [...val.entries()] : Object.entries(val);
 	let result = true;
-	let entries: [string | number | symbol, any][];
-
-	if (isMapOrSet)
-		entries = [...val.entries()];
-	else
-		entries = Object.entries(val);
 
 	for (const [k, v] of entries) {
 		if (!fn.call(null, v)) {
@@ -632,7 +625,8 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 {
 	const required: Set<string> = new Set();
 	const opts = {...OptionsPrototype, ...options};
-	const out: P = Object.create(null) as P;
+	const out: P = Object.create(null);
+
 	if (typeof obj !== 'object')
 		obj = out;
 
@@ -825,8 +819,7 @@ export function validateObject<S extends Schema, P extends InputObject<S> = any>
 	var res;
 	try {
 		res = normalizeObject(schema, obj, options);
-	} catch (err) { /* Intentionally left empty. */
-	}
+	} catch (err) { /* Intentionally left empty. */ }
 
 	return !!res;
 }

@@ -58,8 +58,7 @@ function coerceType(value, toType) {
         try {
             v = BigInt(ToNumber(value));
         }
-        catch (err) {
-        }
+        catch (err) { }
         return v;
     }
     if (toType === 'boolean')
@@ -310,7 +309,7 @@ function resolveReference(key, schema, opts) {
             out.__refs.push(cur);
             break;
         }
-        else if (rule === undefined || !(rule.extends in schema)) {
+        else if (!rule || rule.extends === undefined || !(rule.extends in schema)) {
             handleRuleError(2, opts, key, rule.extends);
             return;
         }
@@ -417,13 +416,9 @@ function evalTestFn(val, fn, passFull, partial, cmpctArrLike) {
         else
             tmp = new (SpeciesConstructor(val, Object));
     }
-    let validIndicies = new Set();
+    const validIndicies = new Set();
+    const entries = isMapOrSet ? [...val.entries()] : Object.entries(val);
     let result = true;
-    let entries;
-    if (isMapOrSet)
-        entries = [...val.entries()];
-    else
-        entries = Object.entries(val);
     for (const [k, v] of entries) {
         if (!fn.call(null, v)) {
             if (!partial) {
@@ -622,8 +617,7 @@ export function validateObject(schema, obj, options) {
     try {
         res = normalizeObject(schema, obj, options);
     }
-    catch (err) {
-    }
+    catch (err) { }
     return !!res;
 }
 export function createNormalizer(schema, options) {

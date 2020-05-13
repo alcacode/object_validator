@@ -14,7 +14,8 @@ import {
 	typeRetVal,
 	CoercableOptionRuleType,
 	CoercableTypes,
-	OptCoerceType
+	OptCoerceType,
+	InputObject
 } from 'object_validator';
 
 const MAX_REFERENCE_DEPTH = 16;
@@ -619,7 +620,7 @@ const OptionsPrototype: Required<Options> = {
 };
 Object.freeze(OptionsPrototype);
 
-export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: any } = any>(
+export function normalizeObject<S extends Schema, P extends InputObject<S> = any>(
 	schema: S,
 	obj?: P,
 	options?: Options): {[k in keyof S]:
@@ -817,8 +818,7 @@ export function normalizeObject<S extends Schema, P extends { [k in keyof S]?: a
 	return out;
 }
 
-export function
-	validateObject<S extends Schema, P extends {[k in keyof S]?: any} = any>(
+export function validateObject<S extends Schema, P extends InputObject<S> = any>(
 		schema: Schema<S>, obj?: P, options?: Options): boolean
 {
 	var res;
@@ -830,13 +830,13 @@ export function
 	return !!res;
 }
 
-export function createNormalizer<S extends Schema, P extends { [k in keyof S]?: any }>(schema: S, options?: Options): (obj?: P) => ReturnType<typeof normalizeObject> {
+export function createNormalizer<S extends Schema, P extends InputObject<S>>(schema: S, options?: Options): (obj?: P) => ReturnType<typeof normalizeObject> {
 	const _options = Object.assign({}, options, { skipSchemaExpansion: true });
 	const _schema  = expandSchema(schema, _options);
 	return (obj?: P) => normalizeObject(_schema, obj, _options);
 }
 
-export function createValidator<S extends Schema, P extends { [k in keyof S]?: any }>(schema: S, options?: Options): (obj?: P) => ReturnType<typeof validateObject> {
+export function createValidator<S extends Schema, P extends InputObject<S>>(schema: S, options?: Options): (obj?: P) => ReturnType<typeof validateObject> {
 	const _options = Object.assign({}, options, { skipSchemaExpansion: true });
 	const _schema  = expandSchema(schema, _options);
 

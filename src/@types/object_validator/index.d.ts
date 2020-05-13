@@ -395,6 +395,8 @@ declare module 'object_validator'
 		throwOnInvalid?: boolean;
 	}
 
+	export type InputObject<S extends Schema> = { [k in keyof S]?: any };
+
 	export function normalizeObject<O extends RuleObject, P extends { [k in keyof O]?: any } = any>(
 		schema: Schema<O>,
 		obj?: P,

@@ -6,8 +6,6 @@ declare module 'object_validator'
 
 	export type MacroTypes = ('any'|'array'|'null'|'int'|'arraylike');
 
-	export type OptionCheckerTypes = BaseTypes|MacroTypes;
-
 	export interface OptTransform<T = any> {
 		/**
 		 * If present and type does not match type of value,
@@ -199,12 +197,6 @@ declare module 'object_validator'
 		allowInherited?: boolean;
 
 		/** 
-		 * Parent rule of sub-rule.
-		 * @internal
-		 */
-		__parent?: OptionRule;
-
-		/** 
 		 * Reference chain of expanded rule.
 		 * @internal
 		 */
@@ -330,8 +322,6 @@ declare module 'object_validator'
 		PATTERN_MISMATCH,
 		SUB_RULE_MISMATCH
 	}
-
-	export const enum COERCE_TYPE {BIGINT, BOOLEAN, NUMBER, STRING}
 
 	export type typeRetVal<T> = T extends string ? (
 		T extends 'number' ? number :

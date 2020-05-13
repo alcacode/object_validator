@@ -623,10 +623,11 @@ Object.freeze(OptionsPrototype);
 export function normalizeObject<S extends Schema, P extends InputObject<S> = any>(
 	schema: S,
 	obj?: P,
-	options?: Options): {[k in keyof S]:
-		'macro' extends keyof NonNullable<S[k]> ? unknown :
+	options?: Options): {
+		[k in keyof S]: 'macro' extends keyof S[k] ? unknown :
 		(k extends keyof P ? (P[k] extends typeRetVal<S[k]['type']> ? P[k] : typeRetVal<S[k]['type']>) : typeRetVal<S[k]['type']>) |
-		('defaultValue' extends keyof S[k] ? S[k]['defaultValue'] : (S[k]['required'] extends true ? never : undefined))
+		('defaultValue' extends keyof S[k] ? S[k]['defaultValue'] :
+			('required' extends keyof S[k] ? (true extends S[k]['required'] ? never : undefined) : undefined))
 	}
 {
 	const required: Set<string> = new Set();

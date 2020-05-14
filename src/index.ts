@@ -454,6 +454,29 @@ type ObjectOf<T> = (
 	{ [key: symbol]: T }
 );
 
+function expandMacroRule(rule: OptionRule) {
+	switch (rule.type) {
+	case 'int':
+		rule.type = 'number';
+		rule.notFloat = true;
+		break;
+	case 'array':
+		rule = rule as any as OptionRuleObject;
+		rule.type = 'object';
+		rule.instance = Array;
+		break;
+	case 'arraylike':
+		rule.type = 'object';
+		rule.__flags = (rule.__flags || 0) | RULE_FLAG.EXPECT_ARRAY_LIKE;
+		break;
+	case 'null':
+		rule.__flags = (rule.__flags || 0) | RULE_FLAG.EXPECT_NULL;
+		break;
+	}
+
+	return rule;
+}
+
 /** Returns the expanded schema based on `schema`. */
 function expandSchema<T extends Schema, K extends string = string & keyof T>(schema: T, opts: Options, parentChain: OptionRule[] = []): T
 {
@@ -466,7 +489,7 @@ function expandSchema<T extends Schema, K extends string = string & keyof T>(sch
 			continue;
 		}
 
-		let rule: OptionRule = out[k];
+		let rule: OptionRule = expandMacroRule(out[k]);
 
 		if (schema[k].extends && !schema[k].macro) {
 			const opt = resolveReference<T, K>(k, schema, opts);
@@ -668,32 +691,6 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 		let __eq_flag = false;
 		let __skip_type_check = false;
 		let __check_arraylike = false;
-
-		/* Convert macro types. */
-		switch (rule.type) {
-		case 'array':
-			rule = Object.assign(rule, { type: 'object', instance: Array });
-			break;
-		case 'arraylike':
-			rule = Object.assign(rule, { type: 'object' });
-			__check_arraylike = true;
-			break;
-		case 'null':
-			rule = Object.assign(rule, { type: 'object' });
-			__eq_flag = true;
-			__eq_val = null;
-			break;
-		case 'int':
-			rule.type = 'number';
-			rule.notFloat = true;
-			break;
-		case 'any':
-			__skip_type_check = true;
-			break;
-		default:
-			rule.type = rule.type?.toLowerCase() as BaseTypes;
-			break;
-		}
 
 		if (!hasProperty(obj, k, rule.allowInherited)) {
 			invalid(out, k, targetKey, rule, ERRNO.MISSING_VALUE, opts);

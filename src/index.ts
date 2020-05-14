@@ -9,7 +9,6 @@ import {
 	OptionRuleBigint,
 	OptionRuleObject,
 	OptionRuleString,
-	BaseTypes,
 	Options,
 	CoercableOptionRuleType,
 	CoercableTypes,
@@ -25,6 +24,11 @@ function isObject<T extends object>(arg: any): arg is T
 	return arg !== null && (typeof arg === 'object' || arg instanceof Object);
 }
 
+/**
+ * Works exactly like hasOwnProperty, but also works on null prototype objects
+ * and acts as a type guard.
+ * @internal
+ */
 function _hasOwnProperty<P extends PropertyKey>(obj: object, p: P): obj is { [k in P]: any } {
 	return Object.prototype.hasOwnProperty.call(obj, p);
 }
@@ -403,13 +407,12 @@ function extendRule(target: OptionRule, source: OptionRule, allowOverwrite?: boo
 			// Do no copy MUST_NOT_EXPAND flag.
 			target.__flags = v & 0x7FFFFFFF;
 		else
-		target[k as keyof typeof target] = v;
+			target[k as keyof typeof target] = v;
 	}
 }
 
 function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(key: string & K, schema: O, opts: Options): (O[K] & OptionRule) | undefined {
 	let out = {...schema[key], __refs: schema[key].__refs ?? []};
-	Object.defineProperty(out, '__refs', { enumerable: false });
 
 	for (let i = 0, cur: K & string = key; i < MAX_REFERENCE_DEPTH; i++) {
 		cur = getRootMacro(cur, schema, opts);

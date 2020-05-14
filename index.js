@@ -31,7 +31,7 @@ function isIterable(val) {
         'value' in tmp;
 }
 function isArrayLike(val) {
-    if (!isObject(val) || !_hasOwnProperty(val, 'length') || typeof val.length !== 'number')
+    if (!isObject(val) || !('length' in val) || typeof val.length !== 'number')
         return false;
     return Array.isArray(val) || isTypedArray(val) || isIterable(val);
 }
@@ -289,18 +289,18 @@ function getRootMacro(key, schema, opts) {
     return cur !== null && cur !== void 0 ? cur : key;
 }
 function extendRule(target, source, allowOverwrite) {
-    if (allowOverwrite)
-        return Object.assign(target, source);
     for (const [k, v] of Object.entries(source)) {
-        if (k in target || k === '__isExpanded')
+        if ((!allowOverwrite && k in target) || k === '__refs')
             continue;
-        target[k] = v;
+        else if (k === '__flags')
+            target.__flags = v & 0x7FFFFFFF;
+        else
+            target[k] = v;
     }
 }
 function resolveReference(key, schema, opts) {
     var _a;
     let out = { ...schema[key], __refs: (_a = schema[key].__refs) !== null && _a !== void 0 ? _a : [] };
-    Object.defineProperty(out, '__refs', { enumerable: false });
     for (let i = 0, cur = key; i < MAX_REFERENCE_DEPTH; i++) {
         cur = getRootMacro(cur, schema, opts);
         const rule = schema[cur];
@@ -318,7 +318,7 @@ function resolveReference(key, schema, opts) {
             break;
         }
         out.__refs.push(cur);
-        Object.assign(out, rule);
+        extendRule(out, rule, true);
         if (rule.extends !== undefined)
             cur = rule.extends;
         else
@@ -328,19 +328,41 @@ function resolveReference(key, schema, opts) {
     delete out.extends;
     return out;
 }
+function expandMacroRule(rule) {
+    switch (rule.type) {
+        case 'int':
+            rule.type = 'number';
+            rule.notFloat = true;
+            break;
+        case 'array':
+            rule = rule;
+            rule.type = 'object';
+            rule.instance = Array;
+            break;
+        case 'arraylike':
+            rule.type = 'object';
+            rule.__flags = (rule.__flags || 0) | 256;
+            break;
+        case 'null':
+            rule.__flags = (rule.__flags || 0) | 128;
+            break;
+    }
+    return rule;
+}
 function expandSchema(schema, opts, parentChain = []) {
+    var _a;
     const out = Object.assign(Object.create(null), schema);
     const refs = Object.create(null);
     for (const k of Object.keys(schema)) {
-        if (out[k].__isExpanded) {
+        if (((_a = out[k]) === null || _a === void 0 ? void 0 : _a.__flags) & 1) {
             out[k] = schema[k];
             continue;
         }
-        let rule = out[k];
+        let rule = expandMacroRule(out[k]);
         if (schema[k].extends && !schema[k].macro) {
             const opt = resolveReference(k, schema, opts);
             if (opt)
-                Object.assign(rule, opt);
+                extendRule(rule, opt, true);
         }
         if (!refs[k])
             refs[k] = [];
@@ -386,11 +408,11 @@ function expandSchema(schema, opts, parentChain = []) {
                 console.warn(`Rule '${k}' incorrectly implements pattern: rule type is not 'string'.`);
             delete rule.pattern;
         }
-        rule.__isExpanded = true;
+        rule.__flags = (rule.__flags || 0) | 1;
     }
     for (const k in refs) {
-        if (refs[k].length && !out[k].hasOwnProperty('__refs'))
-            Object.defineProperty(out[k], '__refs', { enumerable: false, value: [] });
+        if (refs[k].length && !_hasOwnProperty(out[k], '__refs'))
+            out[k].__refs = [];
         for (let i = 0; i < refs[k].length; i++) {
             if (!out[k].__refs.includes(refs[k][i]))
                 out[k].__refs.push(refs[k][i]);
@@ -455,7 +477,7 @@ const OptionsPrototype = {
 };
 Object.freeze(OptionsPrototype);
 export function normalizeObject(schema, obj, options) {
-    var _a, _b;
+    var _a;
     const required = new Set();
     const opts = { ...OptionsPrototype, ...options };
     const out = Object.create(null);
@@ -486,34 +508,8 @@ export function normalizeObject(schema, obj, options) {
             targetKey = rootKey;
         }
         targetKey = ((_a = rule.mapTo) !== null && _a !== void 0 ? _a : targetKey);
-        let __eq_val;
-        let __eq_flag = false;
-        let __skip_type_check = false;
-        let __check_arraylike = false;
-        switch (rule.type) {
-            case 'array':
-                rule = Object.assign(rule, { type: 'object', instance: Array });
-                break;
-            case 'arraylike':
-                rule = Object.assign(rule, { type: 'object' });
-                __check_arraylike = true;
-                break;
-            case 'null':
-                rule = Object.assign(rule, { type: 'object' });
-                __eq_flag = true;
-                __eq_val = null;
-                break;
-            case 'int':
-                rule.type = 'number';
-                rule.notFloat = true;
-                break;
-            case 'any':
-                __skip_type_check = true;
-                break;
-            default:
-                rule.type = (_b = rule.type) === null || _b === void 0 ? void 0 : _b.toLowerCase();
-                break;
-        }
+        const flags = rule.__flags || 0;
+        const skip_type_check = rule.type === 'any';
         if (!hasProperty(obj, k, rule.allowInherited)) {
             invalid(out, k, targetKey, rule, 4, opts);
             if (rule.required)
@@ -521,23 +517,22 @@ export function normalizeObject(schema, obj, options) {
             continue;
         }
         let value = obj[k];
-        if (shouldCoerceType(rule) && !__skip_type_check)
+        if ((flags & 128) && value !== null) {
+            invalid(out, k, targetKey, rule, 9, opts);
+            continue;
+        }
+        if (!skip_type_check && shouldCoerceType(rule))
             value = coerceType(value, rule.type);
-        if (rule.type !== typeof value && !__skip_type_check &&
+        if (!skip_type_check && rule.type !== typeof value &&
             rule.onWrongType instanceof Function)
             value = rule.onWrongType.call(null, value);
         if (rule.transformFn instanceof Function)
             value = rule.transformFn.call(null, value);
-        const valType = typeof value;
-        if (rule.type !== valType && !__skip_type_check) {
+        if (rule.type !== typeof value && !skip_type_check) {
             invalid(out, k, targetKey, rule, 5, opts);
             continue;
         }
-        if (__eq_flag && value !== __eq_val) {
-            invalid(out, k, targetKey, rule, 9, opts);
-            continue;
-        }
-        if (__check_arraylike && !isArrayLike(value)) {
+        if ((flags & 256) && !isArrayLike(value)) {
             invalid(out, k, targetKey, rule, 10, opts);
             continue;
         }
@@ -561,14 +556,14 @@ export function normalizeObject(schema, obj, options) {
             invalid(out, k, targetKey, rule, 11, opts);
             continue;
         }
-        if (valType === 'number' || valType === 'bigint') {
+        if (rule.type === 'number' || rule.type === 'bigint') {
             if (('min' in rule && rule.min > value) ||
                 ('max' in rule && rule.max < value)) {
                 invalid(out, k, targetKey, rule, 0, opts);
                 continue;
             }
         }
-        else if (valType === 'string' || valType === 'object') {
+        else if (rule.type === 'string' || rule.type === 'object') {
             const len = typeof (value === null || value === void 0 ? void 0 : value.length) === 'number' ? value === null || value === void 0 ? void 0 : value.length :
                 NaN;
             if (('minLength' in rule &&
@@ -579,7 +574,7 @@ export function normalizeObject(schema, obj, options) {
                 continue;
             }
         }
-        if (valType === 'number') {
+        if (rule.type === 'number') {
             if ('notNaN' in rule && rule.notNaN && Number.isNaN(value)) {
                 invalid(out, k, targetKey, rule, 2, opts);
                 continue;

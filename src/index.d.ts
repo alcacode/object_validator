@@ -53,3 +53,9 @@ declare const enum PATTERN_REGEXP {
 	WHITESPACE = '\\s+',
 	WHOLE_NUMBER = '([0-9]+)',
 }
+
+declare const enum RULE_FLAG {
+	MUST_NOT_EXPAND   = 0x1,
+	EXPECT_NULL       = 0x80,
+	EXPECT_ARRAY_LIKE = 0x100
+}

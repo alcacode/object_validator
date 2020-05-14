@@ -396,13 +396,13 @@ function getRootMacro<T extends PropertyKey>(key: T, schema: Schema<any>, opts: 
 }
 
 function extendRule(target: OptionRule, source: OptionRule, allowOverwrite?: boolean) {
-	if (allowOverwrite)
-		return Object.assign(target, source);
-
 	for (const [k, v] of Object.entries(source)) {
-		if (k in target || k === '__isExpanded')
+		if ((!allowOverwrite && k in target) || k === '__refs')
 			continue;
-
+		else if (k === '__flags')
+			// Do no copy MUST_NOT_EXPAND flag.
+			target.__flags = v & 0x7FFFFFFF;
+		else
 		target[k as keyof typeof target] = v;
 	}
 }
@@ -428,7 +428,7 @@ function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(ke
 		}
 
 		out.__refs.push(cur);
-		Object.assign(out, rule);
+		extendRule(out, rule, true);
 
 		// getRootMacro cannot be moved here.
 		if (rule.extends !== undefined)
@@ -495,7 +495,7 @@ function expandSchema<T extends Schema, K extends string = string & keyof T>(sch
 			const opt = resolveReference<T, K>(k, schema, opts);
 
 			if (opt)
-				Object.assign(rule, opt);
+				extendRule(rule, opt, true);
 		}
 
 		if (!refs[k])

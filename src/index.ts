@@ -63,7 +63,7 @@ function isIterable<T extends any, U extends IterableIterator<T>>(val: any): val
 
 function isArrayLike<T>(val: any): val is ArrayLike<T>
 {
-	if (!isObject(val) || !_hasOwnProperty(val, 'length') || typeof val.length !== 'number')
+	if (!isObject<{ length?: any }>(val) || !('length' in val) || typeof val.length !== 'number')
 		return false;
 
 	return Array.isArray(val) || isTypedArray(val) || isIterable(val);

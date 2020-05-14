@@ -484,7 +484,7 @@ function expandSchema<T extends Schema, K extends string = string & keyof T>(sch
 	const refs: ObjectOf<K[]> = Object.create(null);
 
 	for (const k of Object.keys(schema) as K[]) {
-		if (out[k].__isExpanded) {
+		if (out[k]?.__flags & RULE_FLAG.MUST_NOT_EXPAND) {
 			out[k] = schema[k];
 			continue;
 		}
@@ -551,12 +551,12 @@ function expandSchema<T extends Schema, K extends string = string & keyof T>(sch
 			delete (rule as OptionRuleString).pattern;
 		}
 
-		rule.__isExpanded = true;
+		rule.__flags = (rule.__flags || 0) | RULE_FLAG.MUST_NOT_EXPAND;
 	}
 
 	for (const k in refs) {
-		if (refs[k].length && !out[k].hasOwnProperty('__refs'))
-			Object.defineProperty(out[k], '__refs', { enumerable: false, value: [] });
+		if (refs[k].length && !_hasOwnProperty(out[k], '__refs'))
+			out[k].__refs = [];
 
 		for (let i = 0; i < refs[k].length; i++) {
 			if (!out[k].__refs!.includes(refs[k][i]))
@@ -687,10 +687,8 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 		}
 		targetKey = (rule.mapTo ?? targetKey) as string;
 
-		let __eq_val;
-		let __eq_flag = false;
-		let __skip_type_check = false;
-		let __check_arraylike = false;
+		const flags = rule.__flags || 0;
+		const skip_type_check = rule.type === 'any';
 
 		if (!hasProperty(obj, k, rule.allowInherited)) {
 			invalid(out, k, targetKey, rule, ERRNO.MISSING_VALUE, opts);
@@ -701,29 +699,27 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 
 		let value = obj[k];
 
-		if (shouldCoerceType(rule) && !__skip_type_check)
+		if ((flags & RULE_FLAG.EXPECT_NULL) && value !== null) {
+			invalid(out, k, targetKey, rule, ERRNO.UNEXPECTED_VALUE, opts);
+			continue;
+		}
+
+		if (!skip_type_check && shouldCoerceType(rule))
 			value = coerceType(value, rule.type);
 
-		if (rule.type !== typeof value && !__skip_type_check &&
+		if (!skip_type_check && rule.type !== typeof value &&
 		    rule.onWrongType instanceof Function)
 			value = rule.onWrongType.call(null, value);
 
 		if (rule.transformFn instanceof Function)
 			value = rule.transformFn.call(null, value);
 
-		/** Final value type. */
-		const valType = typeof value;
-		if (rule.type !== valType && !__skip_type_check) {
+		if (rule.type !== typeof value && !skip_type_check) {
 			invalid(out, k, targetKey, rule, ERRNO.INVALID_TYPE, opts);
 			continue;
 		}
 
-		if (__eq_flag && value !== __eq_val) {
-			invalid(out, k, targetKey, rule, ERRNO.UNEXPECTED_VALUE, opts);
-			continue;
-		}
-
-		if (__check_arraylike && !isArrayLike(value)) {
+		if ((flags & RULE_FLAG.EXPECT_ARRAY_LIKE) && !isArrayLike(value)) {
 			invalid(out, k, targetKey, rule, ERRNO.NOT_ARRAY_LIKE, opts);
 			continue;
 		}

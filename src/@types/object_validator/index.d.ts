@@ -207,13 +207,20 @@ declare module 'object_validator'
 		subRule?: RuleObject;
 
 		/**
-		 * Indicates that the rule has been parsed. Used internally
-		 * for recursive rules.
-		 * @see subRule
-		 * @private
+		 * Bitfield of flags. For use internally.
+		 * 
+		 * | Bit Position  | Description                   |
+		 * |:--------------|:------------------------------|
+		 * | 1             | Rule MUST NOT be expanded.    |
+		 * | 2-7           | Reserved.                     |
+		 * | 8             | Expect value to be `null`.    |
+		 * | 9             | Expect value to be ArrayLike. |
+		 * | 10-32         | Reserved.                     |
+		 * 
+		 * @see RULE_FLAG
 		 * @internal
 		 */
-		__isExpanded?: boolean;
+		__flags?: number;
 	}
 
 	export interface OptionRuleBoolean extends OptCoerceType {

@@ -752,13 +752,13 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 		}
 
 		/* Test range and length. */
-		if (valType === 'number' || valType === 'bigint') {
+		if (rule.type === 'number' || rule.type === 'bigint') {
 			if (('min' in rule && rule.min! > value) ||
 			    ('max' in rule && rule.max! < value)) {
 				invalid(out, k, targetKey, rule, ERRNO.OUT_OF_RANGE, opts);
 				continue;
 			}
-		} else if (valType === 'string' || valType === 'object') {
+		} else if (rule.type === 'string' || rule.type === 'object') {
 			const len: number = typeof value?.length === 'number' ?
 						    value?.length :
 						    NaN;
@@ -771,7 +771,7 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 			}
 		}
 
-		if (valType === 'number') {
+		if (rule.type === 'number') {
 			if ('notNaN' in rule && rule.notNaN && Number.isNaN(value)) {
 				invalid(out, k, targetKey, rule, ERRNO.NOT_A_NUMBER, opts);
 				continue;

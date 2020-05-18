@@ -61,20 +61,7 @@ function getPrototype<T extends any>(obj: T)
 	if (obj === undefined || obj === null)
 		return;
 
-	if (typeof obj === 'number')
-		return Number;
-	if (typeof obj === 'bigint')
-		return BigInt;
-
-	if ('prototype' in obj)
-		return obj.prototype;
-
-	if ('__proto__' in obj)
-		return obj.__proto__;
-
-	// Likely is Object created by Object.create(null).
-	if (typeof obj === 'object')
-		return null;
+	return Object.getPrototypeOf(obj);
 }
 
 /**
@@ -304,7 +291,7 @@ for (const ck in normalizationTests) {
 			else if (!(propKey in res))
 				resStr += ', option discarded';
 			else if (!gotExpected)
-				resStr += `, unexpected value. Expected '${expect ? expect : 'no return value'}', got '${res[propKey] ? expect : 'no return value'}'.`;
+				resStr += `, unexpected value. Expected '${expect ?? 'no return value'}', got '${res[propKey] ?? 'no return value'}'.`;
 
 			console.log(resStr + '\n', `color:${didPass ? 'green' : 'red'};font-weight:600;`, '', '');
 		} else {

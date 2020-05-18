@@ -1,10 +1,8 @@
 declare module 'object_validator'
 {
-	/** ES-6 types. */
-	export type BaseTypes = ('object'|'function'|'number'|'bigint'|'string'|
-				 'undefined'|'boolean'|'symbol');
-
-	export type MacroTypes = ('any'|'array'|'null'|'int'|'arraylike');
+	export interface Clonable<T> {
+		cloneFn?: ((this: null, O: T) => Partial<T>);
+	}
 
 	export interface OptLength {
 		/**
@@ -421,18 +419,20 @@ declare module 'object_validator'
 		/**
 		 * If `true`, print warnings when encountering non-fatal
 		 * errors.\
-		 * Default: `true`
+		 * Default: `true`.
 		 */
 		printWarnings?: boolean;
 
 		/**
 		 * If `true`, causes `normalizeObject()` to return a null
-		 * prototype object, otherwise its prototype will be `Object`.
+		 * prototype object, otherwise its prototype will be `Object`.\
+		 * Default: `true`.
 		 */
 		noReturnValuePrototype?: boolean;
 
 		/**
-		 * If `true`, skips parsing schema with `expandSchema()`.
+		 * If `true`, skips parsing schema with `expandSchema()`.\
+		 * Default: `false`.
 		 */
 		skipSchemaExpansion?: boolean;
 

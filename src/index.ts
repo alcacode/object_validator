@@ -13,7 +13,7 @@ import {
 	CoercableOptionRuleType,
 	CoercableTypes,
 	OptCoerceType,
-	InputObject,
+	InputObject
 } from 'object_validator';
 
 const MAX_REFERENCE_DEPTH = 16;
@@ -33,7 +33,9 @@ function _hasOwnProperty<P extends PropertyKey>(obj: object, p: P): obj is { [k 
 	return Object.prototype.hasOwnProperty.call(obj, p);
 }
 
-function hasProperty<T extends object>(obj: T, prop: PropertyKey, allowInherited?: boolean): prop is keyof T {
+function hasProperty<T extends object>(
+	obj: T, prop: PropertyKey, allowInherited?: boolean): prop is keyof T
+{
 	if (!isObject(obj))
 		return false;
 
@@ -44,7 +46,7 @@ function hasProperty<T extends object>(obj: T, prop: PropertyKey, allowInherited
 }
 
 function isTypedArray(val: any): val is TypedArrayInstance {
-	return val instanceof Uint8Array.prototype.__proto__.constructor;
+	return isObject(val) && Uint8Array.prototype.__proto__.isPrototypeOf(val);
 }
 
 function isIterable<T extends any, U extends IterableIterator<T>>(val: any): val is U
@@ -65,23 +67,15 @@ function isIterable<T extends any, U extends IterableIterator<T>>(val: any): val
 	       'value' in tmp;
 }
 
-function isArrayLike<T>(val: any): val is ArrayLike<T>
-{
-	if (!isObject<{ length?: any }>(val) || !('length' in val) || typeof val.length !== 'number')
+function isArrayLike<T>(val: any): val is ArrayLike<T> {
+	if (!isObject<{length?: any}>(val) || !('length' in val) || typeof val.length !== 'number')
 		return false;
 
 	return Array.isArray(val) || isTypedArray(val) || isIterable(val);
 }
 
-function shouldCoerceType(rule: OptionRule&OptCoerceType): rule is CoercableOptionRuleType {
-	return rule.coerceType === true &&
-		(rule.type === 'number' || rule.type === 'boolean' ||
-		 rule.type === 'string' || rule.type === 'bigint');
-}
-
-function isConstructor(arg: any): arg is new (...args: any[]) => any
-{
-	return arg instanceof Object && typeof arg.constructor === 'function';
+function isConstructor<T = any>(arg: any): arg is new (...args: any[]) => T {
+	return isObject(arg) && arg.constructor instanceof Function;
 }
 
 function ToNumber(val: any): number {
@@ -96,6 +90,12 @@ function ToNumber(val: any): number {
 		return NaN;
 
 	return +val;
+}
+
+function shouldCoerceType(rule: OptionRule&OptCoerceType): rule is CoercableOptionRuleType {
+	return rule.coerceType === true &&
+		(rule.type === 'number' || rule.type === 'boolean' ||
+		 rule.type === 'string' || rule.type === 'bigint');
 }
 
 function coerceType(value: any, toType: CoercableTypes) {
@@ -125,37 +125,15 @@ function coerceType(value: any, toType: CoercableTypes) {
 	throw TypeError("invalid destination type");
 }
 
-function getSpecies<T extends any>(O: T): (new (...args: any) => any) | void
-{
-	if (!isObject(O))
-		return;
-
-	let S: (new (...args: any[]) => any)|undefined = undefined;
-
-	try {
-		S = O[Symbol.species];
-	} finally { /* Intentionally left blank. */
-	}
-
-	if (S === undefined) {
-		if (O.prototype)
-			S = O.prototype;
-		else
-			S = O.__proto__;
-	}
-
-	return S;
-}
-
-function SpeciesConstructor<T extends any>(
-	O: T, defaultConstructor: new (...args: any[]) => any)
+function SpeciesConstructor<T extends { constructor?: Function }>(
+	O: T, defaultConstructor: new (...args: any[]) => T)
 {
 	const C = O.constructor;
 	if (C === undefined)
 		return defaultConstructor;
 
-	if (isObject(C)) {
-		const S = getSpecies(C);
+	if (isObject<{[Symbol.species]?: any}>(C)) {
+		const S = C[Symbol.species];
 		if (S === undefined || S === null)
 			return defaultConstructor;
 
@@ -179,7 +157,7 @@ function createMatchRegExp(arg: string | RegExp, partial?: boolean): RegExp {
         /** Flag used to indicate that the next character might be part of a spcial sequence. */
         let specialCharFlag = 0;
         /** Indicates that the current character is escaped. */
-        let escapeFlag = 0;
+	let escapeFlag = 0;
 
         for (let i = 0, cc = 0; i < arg.length; i++) {
                 cc = arg.charCodeAt(i);
@@ -417,7 +395,9 @@ function extendRule(target: OptionRule, source: OptionRule, allowOverwrite?: boo
 	}
 }
 
-function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(key: string & K, schema: O, opts: Options): (O[K] & OptionRule) | undefined {
+function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(
+	key: string&K, schema: O, opts: Options): (O[K]&OptionRule)|undefined
+{
 	let out = {...schema[key], __refs: schema[key].__refs ?? []};
 
 	for (let i = 0, cur: K & string = key; i < MAX_REFERENCE_DEPTH; i++) {
@@ -470,8 +450,7 @@ function expandMacroRule(rule: OptionRule) {
 		rule.notFloat = true;
 		break;
 	case 'array':
-		rule = rule as any as OptionRuleObject;
-		rule.type = 'object';
+		(rule as OptionRuleObject).type = 'object';
 		rule.instance = Array;
 		break;
 	case 'map':
@@ -494,10 +473,18 @@ function expandMacroRule(rule: OptionRule) {
 	return rule;
 }
 
+function incorrectImpl<T extends OptionRule>(rule: T, ruleKey: keyof T, name: string, printWarning?: boolean) {
+	if (printWarning === true)
+		console.warn(`Rule '${name}' incorrectly implements subRule: rule type is not '${rule.type}'.`);
+
+	delete rule[ruleKey];
+}
+
 /** Returns the expanded schema based on `schema`. */
-function expandSchema<T extends Schema, K extends string = string & keyof T>(schema: T, opts: Options, parentChain: OptionRule[] = []): T
+function expandSchema<T extends Schema, K extends string = string & keyof T>(
+	schema: T, opts: Options, parentChain: OptionRule[] = []): T
 {
-	const out = Object.assign(Object.create(null), schema) as Schema;
+	const out = Object.assign<T, T>(Object.create(null), schema);
 	const refs: ObjectOf<K[]> = Object.create(null);
 
 	for (const k of Object.keys(schema) as K[]) {
@@ -545,14 +532,10 @@ function expandSchema<T extends Schema, K extends string = string & keyof T>(sch
 		}
 
 		if (isObject(rule.subRule)) {
-			if (rule.type === 'object') {
+			if (rule.type === 'object')
 				rule.subRule = expandSchema(rule.subRule, opts, Array.prototype.concat(parentChain, rule));
-			} else {
-				if (opts.printWarnings)
-					console.warn(`Rule '${k}' incorrectly implements subRule: rule type is not 'object'.`);
-
-				delete rule.subRule;
-			}
+			else
+				incorrectImpl(rule, 'subRule', k, opts.printWarnings);
 		}
 
 		if (typeof out[k].allowOverride !== 'boolean' && !schema[k].macro)
@@ -566,10 +549,7 @@ function expandSchema<T extends Schema, K extends string = string & keyof T>(sch
 				rule.patternAction === 'discard' ||
 				rule.patternAction === 'retain');
 		} else if (rule.type !== 'string' && 'pattern' in rule) {
-			if (opts.printWarnings)
-				console.warn(`Rule '${k}' incorrectly implements pattern: rule type is not 'string'.`);
-
-			delete (rule as OptionRuleString).pattern;
+			incorrectImpl(rule, 'pattern', k, opts.printWarnings);
 		}
 
 		rule.__flags = (rule.__flags || 0) | RULE_FLAG.MUST_NOT_EXPAND;
@@ -588,36 +568,35 @@ function expandSchema<T extends Schema, K extends string = string & keyof T>(sch
 	return out as T;
 }
 
-function evalTestFn(val: any, fn?: (arg: any) => boolean, passFull?: boolean,
-		    partial?: boolean, cmpctArrLike?: boolean): [boolean, typeof val]
+function evalTestFn<T extends { length?: any } = any>(
+	val: T, fn: (arg: any) => boolean, rule: OptionRule): [boolean, T]
 {
+	if (rule.testFullValue === true || val === undefined || val === null ||
 	    typeof val === 'symbol' || typeof val === 'string' ||
+	    !((val as any)[Symbol.iterator] instanceof Function)) {
 		return [!!fn.call(null, val), val];
 	}
 
 	// Handle edge cases.
-	const isStr = (typeof val === 'string');
-	const isMapOrSet = val instanceof Map || val instanceof Set;
+	const isMapOrSet  = val instanceof Map || val instanceof Set;
 	const isArrayLike = Array.isArray(val) || isTypedArray(val);
 
 	let tmp: any;
-	if (partial) {
-		if (isStr)
-			tmp = '';
-		else
-			tmp = new (SpeciesConstructor(val, Object));
-	}
+	if (rule.allowPartialPass)
+		tmp = new (SpeciesConstructor(val, Object));
 
+	rule = rule as OptionRuleObject;
 	const validIndicies: Set<any> = new Set();
-	const entries = isMapOrSet ? [...val.entries()] : Object.entries(val);
+	const entries = isMapOrSet ? [...(val as any).entries()] : Object.entries(val);
 	let result = true;
 
 	for (const [k, v] of entries) {
 		if (!fn.call(null, v)) {
-			if (!partial) {
+			if (!rule.allowPartialPass) {
 				result = false;
 				break;
 			}
+		} else if (rule.allowPartialPass) {
 			if (isMapOrSet)
 				'set' in tmp ? tmp.set(k, v) : tmp.add(v);
 			else
@@ -627,13 +606,15 @@ function evalTestFn(val: any, fn?: (arg: any) => boolean, passFull?: boolean,
 		}
 	}
 
-	if (partial && validIndicies.size === 0)
+	if (rule.allowPartialPass && validIndicies.size === 0)
 		result = false;
 
-	if (result && isArrayLike && cmpctArrLike && validIndicies.size !== val.length)
+	if (result && isArrayLike && rule.compactArrayLike && validIndicies.size !== val.length)
 		tmp = tmp.filter((_: any, i: number) => validIndicies.has('' + i));
 
 	validIndicies.clear();
+	return [result, rule.allowPartialPass ? tmp : (tmp = null)];
+}
 
 function retain(str: string, predicate: (c: string) => boolean) {
 	let out = '';
@@ -696,7 +677,7 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 	const out: P = Object.create(null);
 
 	if (typeof obj !== 'object')
-		obj = out;
+		obj = Object.create(null) as P;
 
 	if (opts.throwOnUnrecognized === true) {
 		for (const k of Object.keys(obj)) {
@@ -705,7 +686,7 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 		}
 	}
 
-	let _schema: Schema;
+	let _schema: { [k: string]: OptionRule };
 	if (opts.skipSchemaExpansion === true)
 		_schema = schema;
 	else
@@ -715,14 +696,14 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 	// so that they do not take precedence.
 	const declKeys = Object.keys(_schema).sort(
 		(a, b) => (_schema[a].mapTo || _schema[a].macro ? -1 : 0) -
-			  (_schema[b].mapTo || _schema[b].macro ? -1 : 0));
+			(_schema[b].mapTo || _schema[b].macro ? -1 : 0));
 
 	for (const k of declKeys) {
 		let rule = _schema[k];
-		let targetKey = k;
+		let targetKey = k as keyof P & string;
 
 		if (rule.macro) {
-			const rootKey = getRootMacro(k, _schema, opts) as string;
+			const rootKey = getRootMacro(k, _schema, opts);
 			if (rootKey && _schema[rootKey] && rootKey !== k && !(!rule.allowOverride && rootKey in out))
 				rule = _schema[rootKey];
 			else
@@ -776,7 +757,7 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 
 		if (rule.type === 'object' && rule.subRule) {
 			try {
-				value = normalizeObject(rule.subRule, value, opts);
+				value = normalizeObject(rule.subRule, value, {...opts, skipSchemaExpansion: true });
 			} catch(err) {
 				invalid(out, k, targetKey, rule, ERRNO.SUB_RULE_MISMATCH, opts, err);
 				continue;
@@ -787,9 +768,9 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 		if (rule.type === 'string' && rule.pattern) {
 			const res = applyPattern(rule.pattern as RegExp, value, rule.patternAction);
 			if (!res[0]) {
-			invalid(out, k, targetKey, rule, ERRNO.PATTERN_MISMATCH, opts);
-			continue;
-		}
+				invalid(out, k, targetKey, rule, ERRNO.PATTERN_MISMATCH, opts);
+				continue;
+			}
 			value = res[1];
 		}
 
@@ -831,8 +812,8 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 		if (rule.passTest instanceof Function) {
 			const res = evalTestFn(value, rule.passTest, rule);
 			if (!res[0]) {
-			invalid(out, k, targetKey, rule, ERRNO.TEST_FAIL, opts);
-			continue;
+				invalid(out, k, targetKey, rule, ERRNO.TEST_FAIL, opts);
+				continue;
 			}
 			value = res[1];
 		}
@@ -866,13 +847,13 @@ export function validateObject<S extends Schema, P extends InputObject<S> = any>
 }
 
 export function createNormalizer<S extends Schema, P extends InputObject<S>>(schema: S, options?: Options): (obj?: P) => ReturnType<typeof normalizeObject> {
-	const _options = Object.assign({}, options, { skipSchemaExpansion: true });
+	const _options = {...options, skipSchemaExpansion: true};
 	const _schema  = expandSchema(schema, _options);
 	return (obj?: P) => normalizeObject(_schema, obj, _options);
 }
 
 export function createValidator<S extends Schema, P extends InputObject<S>>(schema: S, options?: Options): (obj?: P) => ReturnType<typeof validateObject> {
-	const _options = Object.assign({}, options, { skipSchemaExpansion: true });
+	const _options = {...options, skipSchemaExpansion: true};
 	const _schema  = expandSchema(schema, _options);
 
 	return (obj?: P) => validateObject(_schema, obj, _options);

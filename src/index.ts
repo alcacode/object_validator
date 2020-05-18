@@ -591,12 +591,7 @@ function expandSchema<T extends Schema, K extends string = string & keyof T>(sch
 function evalTestFn(val: any, fn?: (arg: any) => boolean, passFull?: boolean,
 		    partial?: boolean, cmpctArrLike?: boolean): [boolean, typeof val]
 {
-	if (!(fn instanceof Function))
-		return [true, val];
-
-	if (passFull === true || val === undefined || val === null ||
-	    typeof val === 'symbol' ||
-	    !(val[Symbol.iterator] instanceof Function)) {
+	    typeof val === 'symbol' || typeof val === 'string' ||
 		return [!!fn.call(null, val), val];
 	}
 
@@ -623,10 +618,7 @@ function evalTestFn(val: any, fn?: (arg: any) => boolean, passFull?: boolean,
 				result = false;
 				break;
 			}
-		} else if (partial) {
-			if (isStr)
-				tmp += v;
-			else if (isMapOrSet)
+			if (isMapOrSet)
 				'set' in tmp ? tmp.set(k, v) : tmp.add(v);
 			else
 				tmp[k] = v;

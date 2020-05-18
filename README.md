@@ -91,6 +91,7 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
     - [`ObjectSchema.allowOverride`](#objectschemaallowoverride)
     - [`ObjectSchema.defaultValue`](#objectschemadefaultvalue)
     - [`ObjectSchema.pattern`](#objectschemapattern)
+    - [`ObjectSchema.patternAction`](#objectschemapatternaction)
     - [`ObjectSchema.passTest(value)`](#objectschemapasstestvalue)
       - [Returns](#returns)
     - [`ObjectSchema.testFullValue`](#objectschematestfullvalue)
@@ -306,9 +307,11 @@ Note: If `required` is `true` this value is effectively ignored.
 
 ### `ObjectSchema.pattern`
 
-- <`RegExp`>
+- <`RegExp` | `string`>
 
-Test input value against pattern. If `pattern` is a string value, the following special tokens can be used (case sensitive):
+Test input value against pattern. Action taken is controlled by `patternAction`.
+
+If `pattern` is a string value, the following special tokens can be used (case sensitive):
 
 - `*` Wildcard, matches anything.
 - `%d` Matches any number, including the fractional part. Only period/full stop decimal points are supported.
@@ -322,6 +325,17 @@ Repeated tokens match exactly _n_ times, where _n_ is the number of repetitions.
 For example `%c%c%c` match exactly 3 latin alphabet characters and is equivalent to `/^([a-zA-Z]{3})$/u`.
 
 Note: Special token generation can be prevented by escaping the character.
+
+### `ObjectSchema.patternAction`
+
+Action performed on `pattern` match. Default: `'pass'`.
+
+Possible values:
+
+- `'pass'` - Pass if pattern matches. (Default)
+- `'reject'` - Reject if pattern matches.
+- `'retain'` - Retain only matching characters.
+- `'discard'` - Discard matching characters.
 
 ### `ObjectSchema.passTest(value)`
 

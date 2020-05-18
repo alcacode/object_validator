@@ -14,7 +14,7 @@ function hasProperty(obj, prop, allowInherited) {
     return prop in obj;
 }
 function isTypedArray(val) {
-    return val instanceof Uint8Array.prototype.__proto__.constructor;
+    return isObject(val) && Uint8Array.prototype.__proto__.isPrototypeOf(val);
 }
 function isIterable(val) {
     if (!(val[Symbol.iterator] instanceof Function))
@@ -35,13 +35,8 @@ function isArrayLike(val) {
         return false;
     return Array.isArray(val) || isTypedArray(val) || isIterable(val);
 }
-function shouldCoerceType(rule) {
-    return rule.coerceType === true &&
-        (rule.type === 'number' || rule.type === 'boolean' ||
-            rule.type === 'string' || rule.type === 'bigint');
-}
 function isConstructor(arg) {
-    return arg instanceof Object && typeof arg.constructor === 'function';
+    return isObject(arg) && arg.constructor instanceof Function;
 }
 function ToNumber(val) {
     if (typeof val === 'number')
@@ -51,6 +46,11 @@ function ToNumber(val) {
     if (typeof val === 'symbol')
         return NaN;
     return +val;
+}
+function shouldCoerceType(rule) {
+    return rule.coerceType === true &&
+        (rule.type === 'number' || rule.type === 'boolean' ||
+            rule.type === 'string' || rule.type === 'bigint');
 }
 function coerceType(value, toType) {
     if (toType === 'bigint') {
@@ -72,29 +72,12 @@ function coerceType(value, toType) {
     }
     throw TypeError("invalid destination type");
 }
-function getSpecies(O) {
-    if (!isObject(O))
-        return;
-    let S = undefined;
-    try {
-        S = O[Symbol.species];
-    }
-    finally {
-    }
-    if (S === undefined) {
-        if (O.prototype)
-            S = O.prototype;
-        else
-            S = O.__proto__;
-    }
-    return S;
-}
 function SpeciesConstructor(O, defaultConstructor) {
     const C = O.constructor;
     if (C === undefined)
         return defaultConstructor;
     if (isObject(C)) {
-        const S = getSpecies(C);
+        const S = C[Symbol.species];
         if (S === undefined || S === null)
             return defaultConstructor;
         if (isConstructor(S))
@@ -102,13 +85,14 @@ function SpeciesConstructor(O, defaultConstructor) {
     }
     throw new TypeError(C + ' is not a valid constructor');
 }
-function createMatchRegExp(arg) {
+function createMatchRegExp(arg, partial) {
     if (typeof arg !== 'string') {
         if (arg instanceof RegExp)
             return arg;
         throw TypeError(`'${arg}' is not a valid pattern`);
     }
-    let out = [];
+    const out = [];
+    let haveUnicode = false;
     let specialCharFlag = 0;
     let escapeFlag = 0;
     for (let i = 0, cc = 0; i < arg.length; i++) {
@@ -143,6 +127,7 @@ function createMatchRegExp(arg) {
             out.push("(.*)");
         }
         else {
+            haveUnicode = true;
             out.push(`\\${cc > 0xFF ? `u{${cc.toString(16)}}` : `x${cc.toString(16)}`}`);
         }
         if (cc === 92)
@@ -163,7 +148,10 @@ function createMatchRegExp(arg) {
         }
         c++;
     }
-    return new RegExp(`^${out.join('')}$`, 'u');
+    let regExpStr = out.join('');
+    if (!partial)
+        regExpStr = `^${regExpStr}$`;
+    return new RegExp(regExpStr, haveUnicode ? 'u' : '');
 }
 function handleRuleError(type, opts, ruleName, subst_0, subst_1) {
     let errorConst = undefined;
@@ -335,9 +323,16 @@ function expandMacroRule(rule) {
             rule.notFloat = true;
             break;
         case 'array':
-            rule = rule;
             rule.type = 'object';
             rule.instance = Array;
+            break;
+        case 'map':
+            rule.type = 'object';
+            rule.instance = Map;
+            break;
+        case 'set':
+            rule.type = 'object';
+            rule.instance = Set;
             break;
         case 'arraylike':
             rule.type = 'object';
@@ -348,6 +343,11 @@ function expandMacroRule(rule) {
             break;
     }
     return rule;
+}
+function incorrectImpl(rule, ruleKey, name, printWarning) {
+    if (printWarning === true)
+        console.warn(`Rule '${name}' incorrectly implements subRule: rule type is not '${rule.type}'.`);
+    delete rule[ruleKey];
 }
 function expandSchema(schema, opts, parentChain = []) {
     var _a;
@@ -388,25 +388,21 @@ function expandSchema(schema, opts, parentChain = []) {
             }
         }
         if (isObject(rule.subRule)) {
-            if (rule.type === 'object') {
+            if (rule.type === 'object')
                 rule.subRule = expandSchema(rule.subRule, opts, Array.prototype.concat(parentChain, rule));
-            }
-            else {
-                if (opts.printWarnings)
-                    console.warn(`Rule '${k}' incorrectly implements subRule: rule type is not 'object'.`);
-                delete rule.subRule;
-            }
+            else
+                incorrectImpl(rule, 'subRule', k, opts.printWarnings);
         }
         if (typeof out[k].allowOverride !== 'boolean' && !schema[k].macro)
             out[k].allowOverride = !opts.allowOverride;
-        if (rule.type === 'string' && typeof rule.pattern === 'string') {
+        if (rule.type === 'string' &&
+            typeof rule.pattern === 'string') {
             rule.__pattern = rule.pattern;
-            rule.pattern = createMatchRegExp(rule.pattern);
+            rule.pattern = createMatchRegExp(rule.pattern, rule.patternAction === 'discard' ||
+                rule.patternAction === 'retain');
         }
         else if (rule.type !== 'string' && 'pattern' in rule) {
-            if (opts.printWarnings)
-                console.warn(`Rule '${k}' incorrectly implements pattern: rule type is not 'string'.`);
-            delete rule.pattern;
+            incorrectImpl(rule, 'pattern', k, opts.printWarnings);
         }
         rule.__flags = (rule.__flags || 0) | 1;
     }
@@ -420,50 +416,70 @@ function expandSchema(schema, opts, parentChain = []) {
     }
     return out;
 }
-function evalTestFn(val, fn, passFull, partial, cmpctArrLike) {
-    if (!(fn instanceof Function))
-        return [true, val];
-    if (passFull === true || val === undefined || val === null ||
-        typeof val === 'symbol' ||
+function evalTestFn(val, fn, rule) {
+    if (rule.testFullValue === true || val === undefined || val === null ||
+        typeof val === 'symbol' || typeof val === 'string' ||
         !(val[Symbol.iterator] instanceof Function)) {
         return [!!fn.call(null, val), val];
     }
-    const isStr = (typeof val === 'string');
     const isMapOrSet = val instanceof Map || val instanceof Set;
     const isArrayLike = Array.isArray(val) || isTypedArray(val);
     let tmp;
-    if (partial) {
-        if (isStr)
-            tmp = '';
-        else
-            tmp = new (SpeciesConstructor(val, Object));
-    }
+    if (rule.allowPartialPass)
+        tmp = new (SpeciesConstructor(val, Object));
+    rule = rule;
     const validIndicies = new Set();
     const entries = isMapOrSet ? [...val.entries()] : Object.entries(val);
     let result = true;
     for (const [k, v] of entries) {
         if (!fn.call(null, v)) {
-            if (!partial) {
+            if (!rule.allowPartialPass) {
                 result = false;
                 break;
             }
         }
-        else if (partial) {
-            if (isStr)
-                tmp += v;
-            else if (isMapOrSet)
+        else if (rule.allowPartialPass) {
+            if (isMapOrSet)
                 'set' in tmp ? tmp.set(k, v) : tmp.add(v);
             else
                 tmp[k] = v;
             validIndicies.add(k);
         }
     }
-    if (partial && validIndicies.size === 0)
+    if (rule.allowPartialPass && validIndicies.size === 0)
         result = false;
-    if (result && isArrayLike && cmpctArrLike && validIndicies.size !== val.length)
+    if (result && isArrayLike && rule.compactArrayLike && validIndicies.size !== val.length)
         tmp = tmp.filter((_, i) => validIndicies.has('' + i));
     validIndicies.clear();
-    return [result, partial ? tmp : (tmp = null)];
+    return [result, rule.allowPartialPass ? tmp : (tmp = null)];
+}
+function retain(str, predicate) {
+    let out = '';
+    for (let i = 0; i < str.length; i++)
+        if (predicate.call(undefined, str[i]))
+            out += str[i];
+    return out;
+}
+function applyPattern(pattern, value, action) {
+    const out = [true, ''];
+    switch (action) {
+        case 'retain':
+            out[1] = retain(value, (c) => pattern.test(c));
+            break;
+        case 'discard':
+            out[1] = retain(value, (c) => !pattern.test(c));
+            break;
+        case 'discard':
+        case 'pass':
+        default:
+            out[0] = pattern.test(value);
+            if (action === 'discard')
+                out[0] = !out[0];
+            if (out[0])
+                out[1] = value;
+            break;
+    }
+    return out;
 }
 const OptionsPrototype = {
     allowOverride: true,
@@ -482,7 +498,7 @@ export function normalizeObject(schema, obj, options) {
     const opts = { ...OptionsPrototype, ...options };
     const out = Object.create(null);
     if (typeof obj !== 'object')
-        obj = out;
+        obj = Object.create(null);
     if (opts.throwOnUnrecognized === true) {
         for (const k of Object.keys(obj)) {
             if (!(k in schema))
@@ -526,8 +542,6 @@ export function normalizeObject(schema, obj, options) {
         if (!skip_type_check && rule.type !== typeof value &&
             rule.onWrongType instanceof Function)
             value = rule.onWrongType.call(null, value);
-        if (rule.transformFn instanceof Function)
-            value = rule.transformFn.call(null, value);
         if (rule.type !== typeof value && !skip_type_check) {
             invalid(out, k, targetKey, rule, 5, opts);
             continue;
@@ -536,7 +550,7 @@ export function normalizeObject(schema, obj, options) {
             invalid(out, k, targetKey, rule, 10, opts);
             continue;
         }
-        if ((rule.type === 'object' || rule.type === 'function') && value !== null && 'instance' in rule) {
+        if (rule.type === 'object' && value !== null && 'instance' in rule) {
             if (!isObject(value) ||
                 !(value instanceof rule.instance)) {
                 invalid(out, k, targetKey, rule, 8, opts);
@@ -545,16 +559,20 @@ export function normalizeObject(schema, obj, options) {
         }
         if (rule.type === 'object' && rule.subRule) {
             try {
-                value = normalizeObject(rule.subRule, value, opts);
+                value = normalizeObject(rule.subRule, value, { ...opts, skipSchemaExpansion: true });
             }
             catch (err) {
                 invalid(out, k, targetKey, rule, 12, opts, err);
                 continue;
             }
         }
-        if (rule.type === 'string' && rule.pattern && !rule.pattern.test(value)) {
-            invalid(out, k, targetKey, rule, 11, opts);
-            continue;
+        if (rule.type === 'string' && rule.pattern) {
+            const res = applyPattern(rule.pattern, value, rule.patternAction);
+            if (!res[0]) {
+                invalid(out, k, targetKey, rule, 11, opts);
+                continue;
+            }
+            value = res[1];
         }
         if (rule.type === 'number' || rule.type === 'bigint') {
             if (('min' in rule && rule.min > value) ||
@@ -590,14 +608,18 @@ export function normalizeObject(schema, obj, options) {
                 continue;
             }
         }
-        const passTest = evalTestFn(value, rule.passTest, rule.testFullValue, rule.allowPartialPass, rule.compactArrayLike);
-        if (!passTest[0]) {
-            invalid(out, k, targetKey, rule, 6, opts);
-            continue;
+        if (rule.passTest instanceof Function) {
+            const res = evalTestFn(value, rule.passTest, rule);
+            if (!res[0]) {
+                invalid(out, k, targetKey, rule, 6, opts);
+                continue;
+            }
+            value = res[1];
         }
-        else {
-            out[targetKey] = passTest[1];
-        }
+        if (rule.onPass instanceof Function)
+            out[targetKey] = rule.onPass.call(null, value);
+        else
+            out[targetKey] = value;
     }
     for (const r of required) {
         if (!(r in out))
@@ -616,12 +638,12 @@ export function validateObject(schema, obj, options) {
     return !!res;
 }
 export function createNormalizer(schema, options) {
-    const _options = Object.assign({}, options, { skipSchemaExpansion: true });
+    const _options = { ...options, skipSchemaExpansion: true };
     const _schema = expandSchema(schema, _options);
     return (obj) => normalizeObject(_schema, obj, _options);
 }
 export function createValidator(schema, options) {
-    const _options = Object.assign({}, options, { skipSchemaExpansion: true });
+    const _options = { ...options, skipSchemaExpansion: true };
     const _schema = expandSchema(schema, _options);
     return (obj) => validateObject(_schema, obj, _options);
 }

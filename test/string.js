@@ -45,5 +45,35 @@ export const testConfig = {
             type: 'string',
             pattern: /[0-9]{3}\@\s[a]/
         }
+    },
+    patternRetain: {
+        label: 'Retain Pattern',
+        arg: 'abc123def456',
+        expect: '123456',
+        decl: {
+            type: 'string',
+            pattern: '%i',
+            patternAction: 'retain'
+        }
+    },
+    patternDiscard: {
+        label: 'Discard Pattern',
+        arg: 'abc123def456',
+        expect: 'abcdef',
+        decl: {
+            type: 'string',
+            pattern: '%i',
+            patternAction: 'discard'
+        }
+    },
+    patternReject: {
+        label: 'Reject Pattern',
+        arg: 'abc123def456',
+        shouldFail: true,
+        decl: {
+            type: 'string',
+            pattern: /\d+/g,
+            patternAction: 'reject'
+        }
     }
 };

@@ -1,10 +1,11 @@
-var _a, _c;
+var _a, _c, _d;
 import { normalizeObject, validateObject } from './../index.js';
 import { testConfig as tc_gen } from './general.js';
 import { testConfig as tc_str } from './string.js';
 import { testConfig as tc_arr } from './array.js';
 import { testConfig as tc_arr_like } from './arraylike.js';
 import { testConfig as tc_num } from './number.js';
+import { testConfig as tc_obj } from './object.js';
 const LOG_ERROR_STACK = false;
 const EXPAND_ALL = false;
 const OUTPUT_MAX_LENGTH = 60;
@@ -14,6 +15,7 @@ const normalizationTests = {
     array: tc_arr,
     arrayLike: tc_arr_like,
     number: tc_num,
+    object: tc_obj,
 };
 function printDesc(desc, maxLength) {
     let buf = '';
@@ -41,16 +43,7 @@ function centerAndPad(str, fillString) {
 function getPrototype(obj) {
     if (obj === undefined || obj === null)
         return;
-    if (typeof obj === 'number')
-        return Number;
-    if (typeof obj === 'bigint')
-        return BigInt;
-    if ('prototype' in obj)
-        return obj.prototype;
-    if ('__proto__' in obj)
-        return obj.__proto__;
-    if (typeof obj === 'object')
-        return null;
+    return Object.getPrototypeOf(obj);
 }
 function partiallyEQ(a, b) {
     if (a === b)
@@ -240,7 +233,7 @@ for (const ck in normalizationTests) {
             else if (!(propKey in res))
                 resStr += ', option discarded';
             else if (!gotExpected)
-                resStr += `, unexpected value. Expected '${expect ? expect : 'no return value'}', got '${res[propKey] ? expect : 'no return value'}'.`;
+                resStr += `, unexpected value. Expected '${expect !== null && expect !== void 0 ? expect : 'no return value'}', got '${(_d = res[propKey]) !== null && _d !== void 0 ? _d : 'no return value'}'.`;
             console.log(resStr + '\n', `color:${didPass ? 'green' : 'red'};font-weight:600;`, '', '');
         }
         else {

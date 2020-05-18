@@ -312,7 +312,7 @@ declare module 'object_validator'
 		__parent: OptionRule;
 	}
 
-	export interface OptionRuleFunction extends OptLength, OptInstance {
+	export interface OptionRuleFunction extends OptLength {
 		type: 'function';
 	}
 

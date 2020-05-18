@@ -774,7 +774,7 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 			continue;
 		}
 
-		if ((rule.type === 'object' || rule.type === 'function') && value !== null && 'instance' in rule) {
+		if (rule.type === 'object' && value !== null && 'instance' in rule) {
 			if (!isObject(value) ||
 			    !(value instanceof rule.instance!)) {
 				invalid(out, k, targetKey, rule, ERRNO.INVALID_INSTANCE, opts);

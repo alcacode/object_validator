@@ -62,7 +62,8 @@ declare module 'object_validator'
 
 	export interface OptPatternMatch {
 		/**
-		 * Test input value against pattern.
+		 * Pattern to apply. What action is taken is controlled by
+		 * `patternAction`.
 		 *
 		 * If `pattern` is a string value, the following special tokens
 		 * can be used (case sensitive):
@@ -78,8 +79,20 @@ declare module 'object_validator'
 		 * Repeated tokens match exactly _n_ times, where _n_ is the number of repetitions.
 		 * 
 		 * Note: Special token generation can be prevented by escaping the character.
+		 * @see patternAction
 		 */
 		pattern?: string|RegExp;
+
+		/**
+		 * Action performed on `pattern` match. Default: `'pass'`.
+		 * 
+		 * Possible values:
+		 *  - `'pass'` - Pass if pattern matches.
+		 *  - `'reject'` - Reject if pattern matches.
+		 *  - `'retain'` - Retain only matching characters.
+		 *  - `'discard'` - Discard matching characters.
+		 */
+		patternAction?: 'reject' | 'pass' | 'retain' | 'discard';
 
 		/**
 		 * Original pattern value.

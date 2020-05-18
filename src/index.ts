@@ -166,7 +166,7 @@ function SpeciesConstructor<T extends any>(
 	throw new TypeError(C + ' is not a valid constructor');
 }
 
-function createMatchRegExp(arg: string | RegExp): RegExp {
+function createMatchRegExp(arg: string | RegExp, partial?: boolean): RegExp {
         if (typeof arg !== 'string') {
                 if (arg instanceof RegExp)
                         return arg;
@@ -174,7 +174,8 @@ function createMatchRegExp(arg: string | RegExp): RegExp {
                 throw TypeError(`'${arg}' is not a valid pattern`);
         }
 
-        let out: string[] = [];
+	const out: string[] = [];
+	let haveUnicode = false;
         /** Flag used to indicate that the next character might be part of a spcial sequence. */
         let specialCharFlag = 0;
         /** Indicates that the current character is escaped. */
@@ -187,36 +188,37 @@ function createMatchRegExp(arg: string | RegExp): RegExp {
                         specialCharFlag = 0;
 
                         switch (cc) {
-                        case PATTERN_CHARS.LATIN_SMALL_LETTER_C:
+                        case PATTERN_CHAR.LATIN_SMALL_LETTER_C:
                                 out.push(PATTERN_REGEXP.LATIN_ALPHABET);
                                 continue;
-                        case PATTERN_CHARS.LATIN_SMALL_LETTER_D:
+                        case PATTERN_CHAR.LATIN_SMALL_LETTER_D:
                                 out.push(PATTERN_REGEXP.NUMBER_AND_FRACTION);
                                 continue;
-                        case PATTERN_CHARS.LATIN_SMALL_LETTER_I:
+                        case PATTERN_CHAR.LATIN_SMALL_LETTER_I:
                                 out.push(PATTERN_REGEXP.WHOLE_NUMBER);
                                 continue;
-                        case PATTERN_CHARS.LATIN_SMALL_LETTER_N:
+                        case PATTERN_CHAR.LATIN_SMALL_LETTER_N:
                                 out.push(PATTERN_REGEXP.NEWLINE);
                                 continue;
-                        case PATTERN_CHARS.LATIN_SMALL_LETTER_S:
+                        case PATTERN_CHAR.LATIN_SMALL_LETTER_S:
                                 out.push(PATTERN_REGEXP.NON_WHITESPACE);
                                 continue;
-                        case PATTERN_CHARS.LATIN_SMALL_LETTER_W:
+                        case PATTERN_CHAR.LATIN_SMALL_LETTER_W:
                                 out.push(PATTERN_REGEXP.WHITESPACE);
                                 continue;
                         }
                 }
 
-                if (!escapeFlag && cc === PATTERN_CHARS.PERCENT_SIGN) {
+                if (!escapeFlag && cc === PATTERN_CHAR.PERCENT_SIGN) {
                         specialCharFlag = 1;
-                } else if (!escapeFlag && cc === PATTERN_CHARS.ASTERISK) {
+                } else if (!escapeFlag && cc === PATTERN_CHAR.ASTERISK) {
                         out.push(PATTERN_REGEXP.ANY);
                 } else {
+			haveUnicode = true;
                         out.push(`\\${cc > 0xFF ? `u{${cc.toString(16)}}` : `x${cc.toString(16)}`}`);
                 }
 
-                if (cc === PATTERN_CHARS.REVERSE_SOLIDUS)
+                if (cc === PATTERN_CHAR.REVERSE_SOLIDUS)
                         escapeFlag = 1;
                 else
                         escapeFlag = 0;
@@ -239,7 +241,11 @@ function createMatchRegExp(arg: string | RegExp): RegExp {
 		c++;
         }
 
-        return new RegExp(`^${out.join('')}$`, 'u');
+	let regExpStr = out.join('');
+	if (!partial)
+		regExpStr = `^${regExpStr}$`;
+
+	return new RegExp(regExpStr, haveUnicode ? 'u' : '');
 }
 
 function handleRuleError(type: RULE_ERROR.CIRCULAR_REFERENCE, opts: Options, ruleName: PropertyKey, lastNonCirc?: PropertyKey, circRef?: any): void;
@@ -544,9 +550,13 @@ function expandSchema<T extends Schema, K extends string = string & keyof T>(sch
 		if (typeof out[k].allowOverride !== 'boolean' && !schema[k].macro)
 			out[k].allowOverride = !opts.allowOverride;
 
-		if (rule.type === 'string' && typeof rule.pattern === 'string') {
+		if (rule.type === 'string' &&
+		    typeof rule.pattern === 'string') {
 			rule.__pattern = rule.pattern;
-			rule.pattern = createMatchRegExp(rule.pattern);
+			rule.pattern = createMatchRegExp(
+				rule.pattern,
+				rule.patternAction === 'discard' ||
+				rule.patternAction === 'retain');
 		} else if (rule.type !== 'string' && 'pattern' in rule) {
 			if (opts.printWarnings)
 				console.warn(`Rule '${k}' incorrectly implements pattern: rule type is not 'string'.`);
@@ -624,7 +634,39 @@ function evalTestFn(val: any, fn?: (arg: any) => boolean, passFull?: boolean,
 		tmp = tmp.filter((_: any, i: number) => validIndicies.has('' + i));
 
 	validIndicies.clear();
-	return [result, partial ? tmp : (tmp = null)];
+
+function retain(str: string, predicate: (c: string) => boolean) {
+	let out = '';
+	for (let i = 0; i < str.length; i++)
+		if (predicate.call(undefined, str[i]))
+			out += str[i];
+
+	return out;
+}
+
+function applyPattern(pattern: RegExp, value: string, action?: 'reject' | 'pass' | 'retain' | 'discard') {
+	const out: [boolean, string] = [true, ''];
+
+	switch (action) {
+	case 'retain':
+		out[1] = retain(value, (c: string) => pattern.test(c));
+		break;
+	case 'discard':
+		out[1] = retain(value, (c: string) => !pattern.test(c));
+		break;
+	case 'discard':
+	case 'pass':
+	default:
+		out[0] = pattern.test(value);
+		if (action === 'discard')
+			out[0] = !out[0];
+		if (out[0])
+			/* Only return a value if pattern matched. */
+			out[1] = value;
+		break;
+	}
+
+	return out;
 }
 
 const OptionsPrototype: Required<Options> = {
@@ -745,9 +787,13 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 		}
 
 		/* Pattern matching. */
-		if (rule.type === 'string' && rule.pattern && !(rule.pattern as RegExp).test(value)) {
+		if (rule.type === 'string' && rule.pattern) {
+			const res = applyPattern(rule.pattern as RegExp, value, rule.patternAction);
+			if (!res[0]) {
 			invalid(out, k, targetKey, rule, ERRNO.PATTERN_MISMATCH, opts);
 			continue;
+		}
+			value = res[1];
 		}
 
 		/* Test range and length. */

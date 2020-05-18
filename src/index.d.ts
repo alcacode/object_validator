@@ -32,7 +32,7 @@ declare type typeRetVal<T> = T extends string ? (
 	T
 ) : unknown;
 
-declare const enum PATTERN_CHARS {
+declare const enum PATTERN_CHAR {
 	ASTERISK = 0x002A,
 	PERCENT_SIGN = 0x0025,
 	REVERSE_SOLIDUS = 0x005C,

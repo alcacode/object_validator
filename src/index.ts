@@ -756,9 +756,6 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 		    rule.onWrongType instanceof Function)
 			value = rule.onWrongType.call(null, value);
 
-		if (rule.transformFn instanceof Function)
-			value = rule.transformFn.call(null, value);
-
 		if (rule.type !== typeof value && !skip_type_check) {
 			invalid(out, k, targetKey, rule, ERRNO.INVALID_TYPE, opts);
 			continue;
@@ -831,17 +828,19 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 			}
 		}
 
-		const passTest =
-			evalTestFn(value, rule.passTest, rule.testFullValue,
-				   rule.allowPartialPass,
-				   (rule as OptionRuleObject).compactArrayLike);
-
-		if (!passTest[0]) {
+		if (rule.passTest instanceof Function) {
+			const res = evalTestFn(value, rule.passTest, rule);
+			if (!res[0]) {
 			invalid(out, k, targetKey, rule, ERRNO.TEST_FAIL, opts);
 			continue;
-		} else {
-			out[targetKey as keyof S] = passTest[1];
+			}
+			value = res[1];
 		}
+
+		if (rule.onPass instanceof Function)
+			out[targetKey] = rule.onPass.call<null, any, any>(null, value);
+		else
+			out[targetKey] = value;
 	}
 
 	for (const r of required) {

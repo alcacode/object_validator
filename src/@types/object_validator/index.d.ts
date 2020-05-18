@@ -166,14 +166,41 @@ declare module 'object_validator'
 		mapTo?: PropertyKey;
 
 		/**
-		 * If present and type does not match type of value,
-		 * replace value with the return value of `onWrongType`
-		 * called with itself as the
-		 * first argument.\
-		 * \
-		 * Note: `onWrongType` is called _before_ `transformFn`.
+		 * Function called for each matched valid input value.
+		 * Its return value is used as the final output value.
+		 * 
+		 * # Parameters
+		 * 
+		 * - `value` <any>\
+		 * Input value currently being evaluated. Note that this value
+		 * will not necessarily correspond to the actual raw input as
+		 * it might have been transformed by other rules, such as
+		 * `onWrongType`.
+		 * 
+		 * # Return Value
+		 * 
+		 * Final output value.
+		 * 
+		 * It is recommended that the return type be identical to that
+		 * of the input value.
 		 */
-		onWrongType?: (value: any) => OptionRuleReturnType<this>;
+		onPass?<T = any>(this: null, value: T): T;
+
+		/**
+		 * Function called if the input value type does not match the
+		 * type specified by the rule. Its return value is used to
+		 * replace input value.
+		 * 
+		 * # Parameters
+		 * 
+		 * - `value` <any>\
+		 * Input value currently being evaluated.
+		 * 
+		 * # Return Value
+		 * 
+		 * Value replacing current input value.
+		 */
+		onWrongType?(this: null, value: any): OptionRuleReturnType<this>;
 
 		/**
 		 * If present, pass value as argument to `passTest` and
@@ -197,15 +224,6 @@ declare module 'object_validator'
 		 * type. Default: `false`.
 		 */
 		testFullValue?: boolean;
-
-		/**
-		 * If present, replace value with the return value of
-		 * `transformFn` called with itself as the first
-		 *  argument.\
-		 * \
-		 * Note: `transformFn` is called _after_ `onWrongType`.
-		 */
-		transformFn?: (value: any) => OptionRuleReturnType<this>;
 
 		/** 
 		 * Reference chain of expanded rule.

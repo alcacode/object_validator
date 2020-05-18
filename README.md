@@ -68,6 +68,8 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
     - [ES6 Types](#es6-types)
     - [Macro Types](#macro-types)
       - [Array](#array)
+      - [Map](#map)
+      - [Set](#set)
       - [Int](#int)
       - [Null](#null)
     - [Special Types](#special-types)
@@ -96,7 +98,11 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
     - [`ObjectSchema.allowInherited`](#objectschemaallowinherited)
       - [Example](#example-1)
     - [`ObjectSchema.onWrongType(value)`](#objectschemaonwrongtypevalue)
-    - [`ObjectSchema.transformFn(value)`](#objectschematransformfnvalue)
+      - [Parameters](#parameters)
+      - [Return Value](#return-value)
+    - [`ObjectSchema.onPass(value)`](#objectschemaonpassvalue)
+      - [Parameters](#parameters-1)
+      - [Return Value](#return-value-1)
     - [`ObjectSchema.maxLength`](#objectschemamaxlength)
     - [`ObjectSchema.minLength`](#objectschemaminlength)
     - [`ObjectSchema.instance`](#objectschemainstance)
@@ -118,12 +124,12 @@ In the above example, `normalized` is guaranteed to have `str` property with a `
     - [`ObjectSchema.subRule`](#objectschemasubrule)
       - [Example](#example-3)
   - [`normalizeObject(schema[,obj][, options])`](#normalizeobjectschemaobj)
-    - [Parameters](#parameters)
+    - [Parameters](#parameters-2)
     - [Returns](#returns-1)
     - [Exceptions](#exceptions)
     - [Example](#example-4)
   - [`validateObject(schema[,obj][, options])`](#validateobjectschemaobj)
-    - [Parameters](#parameters-1)
+    - [Parameters](#parameters-3)
     - [Returns](#returns-2)
     - [Exceptions](#exceptions-1)
   - [`createNormalizer(schema[,options])`](#createnormalizerschemaoptions)
@@ -152,15 +158,23 @@ Macro types are types that expand to a built-in type with some specific configur
 
 #### Array
 
-Shorthand for 'object' where `instance` is `Array`.
+Macro for 'object' where `instance` is `Array`.
+
+#### Map
+
+Macro for 'object' where `instance` is `Map`.
+
+#### Set
+
+Macro for 'object' where `instance` is `Set`.
 
 #### Int
 
-Shorthand for 'number' where `isFloat` is `false`.
+Macro for 'number' where `isFloat` is `false`.
 
 #### Null
 
-Shorthand for 'object' where the only allowed value is `null`.
+Macro for 'object' where the only allowed value is `null`.
 
 ### Special Types
 
@@ -311,10 +325,10 @@ Note: Special token generation can be prevented by escaping the character.
 
 ### `ObjectSchema.passTest(value)`
 
-Function used to test option value.
+Function used to test input value if value passed all other tests.
 
 - `this` <`undefined`>
-- `value` <`any`> Value of the option currently being evaluated or its member items if an `@@iterator` method is present.
+- `value` <`any`> Value of the value currently being evaluated or its member items if an `@@iterator` method is present.
 
 #### Returns
 
@@ -357,19 +371,35 @@ normalizeObject(schema, {}); // { hasOwnProperty: [Function: hasOwnProperty] }
 
 ### `ObjectSchema.onWrongType(value)`
 
-- `this` <`undefined`>
+Function called if the input value type does not match the type specified by the rule. Its return value is used to replace input value.
+
+#### Parameters
+
 - `value` <`any`> Value of the option currently being evaluated.
 
-Function called **if** type check fails, replacing the current option value and continuing evaluation. If not present, a type mismatch will instead dismiss the option. Called before final type check.
+The function is called with `this` set to `null`.
 
-### `ObjectSchema.transformFn(value)`
+#### Return Value
 
-- `this` <`undefined`>
-- `value` <`any`> Value of the option currently being evaluated.
+Value replacing current input value.
 
-Transformation function whose return value replaces the current option value. This can be used to cast values to more appropriate types or formats. Called before final type check.
+### `ObjectSchema.onPass(value)`
 
-Note: This function is called after `onWrongType()`.
+Function called for each matched valid input value. Its return value is used as the final output value.
+
+#### Parameters
+
+- `value` <any>\
+Input value currently being evaluated. Note that this value will not necessarily correspond to the actual raw input as it might have been transformed by other rules, such as `onWrongType`.
+
+The function is called with `this` set to `null`.
+
+#### Return Value
+
+Final output value.
+
+It is recommended that the return type be identical to that
+of the input value.
 
 ### `ObjectSchema.maxLength`
 

@@ -284,11 +284,29 @@ declare module 'object_validator'
 		type: 'symbol';
 	}
 
-	export interface OptionRuleObject extends OptLength, OptInstance,
-						  OptCompactArrayLike {
-		type: 'object' | 'arraylike';
+	interface OptionRuleObjectBase {
 		subRule?: RuleObject;
+
+		/**
+		 * If `true`, remove any gaps resulting from a partial
+		 * pass. Instances of `Array` and `TypedArray` are
+		 * considered array-like.
+		 *
+		 * Note: Has no effect if `allowPartialPass` is not
+		 * `true`.
+		 */
+		compactArrayLike?: boolean;
 	}
+
+	export type OptionRuleObject = (
+		OptionRuleObjectBase & OptLength &
+		(
+			{ type: 'object' | 'arraylike' } & OptInstance |
+			{ type: 'array', instance?: ArrayConstructor } |
+			{ type: 'map',   instance?: MapConstructor }   |
+			{ type: 'set',   instance?: SetConstructor }
+		)
+	);
 
 	export interface OptionSubRule {
 		__parent: OptionRule;
@@ -296,11 +314,6 @@ declare module 'object_validator'
 
 	export interface OptionRuleFunction extends OptLength, OptInstance {
 		type: 'function';
-	}
-
-	export interface OptionRuleArray extends OptLength,
-						 OptCompactArrayLike {
-		type: 'array';
 	}
 
 	export interface OptionRuleNumber extends OptRange, OptCoerceType {
@@ -335,7 +348,7 @@ declare module 'object_validator'
 	export type OptionRule = OptionRuleBase &
 		(OptionRuleObject|OptionRuleString|OptionRuleFunction|
 		 OptionRuleUndefined|OptionRuleNumber|OptionRuleBigint|
-		 OptionRuleBoolean|OptionRuleArray|OptionRuleSymbol|
+		 OptionRuleBoolean|OptionRuleSymbol|
 		 OptionRuleNull|OptionRuleAny|OptionRuleMacro|
 		 OptionRuleExtends);
 
@@ -384,7 +397,6 @@ declare module 'object_validator'
 
 	type OptionRuleRetType<T> = T extends OptionRule ? (
 		T extends OptionRuleAny       ? any       :
-		T extends OptionRuleArray     ? any[]     :
 		T extends OptionRuleBigint    ? bigint    :
 		T extends OptionRuleBoolean   ? boolean   :
 		T extends OptionRuleExtends   ? unknown   :

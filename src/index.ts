@@ -474,6 +474,14 @@ function expandMacroRule(rule: OptionRule) {
 		rule.type = 'object';
 		rule.instance = Array;
 		break;
+	case 'map':
+		(rule as OptionRuleObject).type = 'object';
+		rule.instance = Map;
+		break;
+	case 'set':
+		(rule as OptionRuleObject).type = 'object';
+		rule.instance = Set;
+		break;
 	case 'arraylike':
 		rule.type = 'object';
 		rule.__flags = (rule.__flags || 0) | RULE_FLAG.EXPECT_ARRAY_LIKE;

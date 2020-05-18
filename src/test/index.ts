@@ -4,6 +4,7 @@ import {testConfig as tc_str} from './string.js';
 import {testConfig as tc_arr} from './array.js';
 import {testConfig as tc_arr_like} from './arraylike.js';
 import {testConfig as tc_num} from './number.js';
+import {testConfig as tc_obj} from './object.js';
 import type {TestConfig, Schema, Options} from 'object_validator';
 
 /**
@@ -25,6 +26,7 @@ const normalizationTests: { [key: string]: TestConfig } = {
 	array: tc_arr,
 	arrayLike: tc_arr_like,
 	number: tc_num,
+	object: tc_obj,
 };
 
 function printDesc(desc: string, maxLength: number) {

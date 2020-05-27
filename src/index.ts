@@ -403,7 +403,7 @@ function resolveReference<O extends Schema = {}, K extends keyof O = keyof O>(
 			out.__refs.push(cur);
 			break;
 		} else if (!rule || rule.extends === undefined || !(rule.extends in schema)) {
-			handleRuleError(RULE_ERROR.REFERENCE_ERROR, opts, key, rule.extends);
+			handleRuleError(RULE_ERROR.REFERENCE_ERROR, opts, key, rule?.extends);
 			return;
 		} else if (out.__refs.includes(cur)) {
 			handleRuleError(RULE_ERROR.CIRCULAR_REFERENCE, opts, key, cur, rule.extends);

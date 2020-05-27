@@ -776,13 +776,14 @@ export function normalizeObject<S extends Schema, P extends InputObject<S> = any
 				continue;
 			}
 		} else if (rule.type === 'string' || rule.type === 'object') {
-			const len: number = typeof value?.length === 'number' ?
-						    value?.length :
-						    NaN;
+			let len = NaN;
+			if (typeof value?.length === 'number')
+				len = value.length;
+
 			if (('minLength' in rule &&
-			     (len === NaN || rule.minLength! > len)) ||
+			     (Number.isNaN(len) || rule.minLength! > len)) ||
 			    ('maxLength' in rule &&
-			     (len === NaN || rule.maxLength! < len))) {
+			     (Number.isNaN(len) || rule.maxLength! < len))) {
 				invalid(out, k, targetKey, rule, ERRNO.INVALID_LENGTH, opts);
 				continue;
 			}

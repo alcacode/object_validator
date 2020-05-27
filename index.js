@@ -202,7 +202,6 @@ function invalid(obj, baseKey, targetKey, rule, reason, options, extra) {
         prop = `Value mapped to '${String(targetKey)}' via rule '${baseKey}'`;
     switch (reason) {
         case 0:
-            rule = rule;
             const rangeMax = 'max' in rule ? ' < ' + (rule.max + 1) : '';
             const rangeMin = 'min' in rule ? (rule.min - 1) + ' < ' : '';
             throw RangeError(`${prop} is not within its allowed ` +
@@ -221,7 +220,6 @@ function invalid(obj, baseKey, targetKey, rule, reason, options, extra) {
         case 6:
             throw Error(`${prop} failed to validate`);
         case 7:
-            rule = rule;
             if (typeof obj[baseKey].length !== 'number')
                 throw ReferenceError(prop + 'has a specified max \
                                 and/or min length but value lacks a length property');
@@ -234,7 +232,6 @@ function invalid(obj, baseKey, targetKey, rule, reason, options, extra) {
             throw RangeError(`${prop} has an invalid length, the ` +
                 `allowed range is [${lenMin}length${lenMax}]`);
         case 8:
-            rule = rule;
             if (rule.instance && rule.instance.name)
                 throw TypeError(`${prop} is not an instance of ${rule.instance.name}`);
             else
@@ -244,7 +241,6 @@ function invalid(obj, baseKey, targetKey, rule, reason, options, extra) {
         case 10:
             throw Error(`${prop} is not an array-like Object`);
         case 11:
-            rule = rule;
             let tmp = `${prop} does not match pattern ${rule.pattern}`;
             if (rule.__pattern)
                 tmp += ` (derived from '${rule.__pattern}')`;
@@ -298,7 +294,7 @@ function resolveReference(key, schema, opts) {
             break;
         }
         else if (!rule || rule.extends === undefined || !(rule.extends in schema)) {
-            handleRuleError(2, opts, key, rule.extends);
+            handleRuleError(2, opts, key, rule === null || rule === void 0 ? void 0 : rule.extends);
             return;
         }
         else if (out.__refs.includes(cur)) {
@@ -469,11 +465,9 @@ function applyPattern(pattern, value, action) {
         case 'discard':
             out[1] = retain(value, (c) => !pattern.test(c));
             break;
-        case 'discard':
-        case 'pass':
         default:
             out[0] = pattern.test(value);
-            if (action === 'discard')
+            if (action === 'reject')
                 out[0] = !out[0];
             if (out[0])
                 out[1] = value;
@@ -582,12 +576,13 @@ export function normalizeObject(schema, obj, options) {
             }
         }
         else if (rule.type === 'string' || rule.type === 'object') {
-            const len = typeof (value === null || value === void 0 ? void 0 : value.length) === 'number' ? value === null || value === void 0 ? void 0 : value.length :
-                NaN;
+            let len = NaN;
+            if (typeof (value === null || value === void 0 ? void 0 : value.length) === 'number')
+                len = value.length;
             if (('minLength' in rule &&
-                (len === NaN || rule.minLength > len)) ||
+                (Number.isNaN(len) || rule.minLength > len)) ||
                 ('maxLength' in rule &&
-                    (len === NaN || rule.maxLength < len))) {
+                    (Number.isNaN(len) || rule.maxLength < len))) {
                 invalid(out, k, targetKey, rule, 7, opts);
                 continue;
             }

@@ -423,7 +423,6 @@ function evalTestFn(val, fn, rule) {
     let tmp;
     if (rule.allowPartialPass)
         tmp = new (SpeciesConstructor(val, Object));
-    rule = rule;
     const validIndicies = new Set();
     const entries = isMapOrSet ? [...val.entries()] : Object.entries(val);
     let result = true;

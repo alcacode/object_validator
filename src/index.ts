@@ -294,7 +294,6 @@ function invalid(obj: { [x: string]: any }, baseKey: PropertyKey,
 
 	switch (reason) {
 	case ERRNO.OUT_OF_RANGE:
-		rule = rule as (OptionRuleNumber | OptionRuleBigint);
 		const rangeMax = 'max' in rule ? ' < ' + (rule.max! + 1) : '';
 		const rangeMin = 'min' in rule ? (rule.min! - 1) + ' < ' : '';
 
@@ -314,8 +313,6 @@ function invalid(obj: { [x: string]: any }, baseKey: PropertyKey,
 	case ERRNO.TEST_FAIL:
 		throw Error(`${prop} failed to validate`);
 	case ERRNO.INVALID_LENGTH:
-		rule = rule as (OptionRuleObject | OptionRuleString);
-
 		if (typeof obj[baseKey].length !== 'number')
 			throw ReferenceError(prop + 'has a specified max \
                                 and/or min length but value lacks a length property');
@@ -331,10 +328,8 @@ function invalid(obj: { [x: string]: any }, baseKey: PropertyKey,
 			`${prop} has an invalid length, the ` +
 			`allowed range is [${lenMin}length${lenMax}]`);
 	case ERRNO.INVALID_INSTANCE:
-		rule = rule as OptionRuleObject;
-		if (rule.instance && rule.instance.name)
-			throw TypeError(`${prop} is not an instance of ${
-				rule.instance.name}`);
+		if ((<OptionRuleObject>rule).instance && (<OptionRuleObject>rule).instance!.name)
+			throw TypeError(`${prop} is not an instance of ${(<OptionRuleObject>rule).instance!.name}`);
 		else
 			throw TypeError(`${prop} is not a valid instance type`);
 	case ERRNO.UNEXPECTED_VALUE:
@@ -342,10 +337,9 @@ function invalid(obj: { [x: string]: any }, baseKey: PropertyKey,
 	case ERRNO.NOT_ARRAY_LIKE:
 		throw Error(`${prop} is not an array-like Object`);
 	case ERRNO.PATTERN_MISMATCH:
-		rule = rule as OptionRuleString;
-		let tmp = `${prop} does not match pattern ${rule.pattern}`;
-		if (rule.__pattern)
-			tmp += ` (derived from '${rule.__pattern}')`;
+		let tmp = `${prop} does not match pattern ${(<OptionRuleString>rule).pattern}`;
+		if ((<OptionRuleString>rule).__pattern)
+			tmp += ` (derived from '${(<OptionRuleString>rule).__pattern}')`;
 
 		throw Error(tmp);
 	case ERRNO.SUB_RULE_MISMATCH:

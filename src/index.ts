@@ -576,7 +576,6 @@ function evalTestFn<T extends { length?: any } = any>(
 	if (rule.allowPartialPass)
 		tmp = new (SpeciesConstructor(val, Object));
 
-	rule = rule as OptionRuleObject;
 	const validIndicies: Set<any> = new Set();
 	const entries = isMapOrSet ? [...(val as any).entries()] : Object.entries(val);
 	let result = true;
@@ -600,7 +599,7 @@ function evalTestFn<T extends { length?: any } = any>(
 	if (rule.allowPartialPass && validIndicies.size === 0)
 		result = false;
 
-	if (result && isArrayLike && rule.compactArrayLike && validIndicies.size !== val.length)
+	if (result && isArrayLike && (<OptionRuleObject>rule).compactArrayLike && validIndicies.size !== val.length)
 		tmp = tmp.filter((_: any, i: number) => validIndicies.has('' + i));
 
 	validIndicies.clear();

@@ -629,11 +629,9 @@ function applyPattern(pattern: RegExp, value: string, action?: 'reject' | 'pass'
 	case 'discard':
 		out[1] = retain(value, (c: string) => !pattern.test(c));
 		break;
-	case 'discard':
-	case 'pass':
 	default:
 		out[0] = pattern.test(value);
-		if (action === 'discard')
+		if (action === 'reject')
 			out[0] = !out[0];
 		if (out[0])
 			/* Only return a value if pattern matched. */

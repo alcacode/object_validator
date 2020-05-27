@@ -5,8 +5,6 @@ import {
 	ERRNO,
 	OptionRule,
 	Schema,
-	OptionRuleNumber,
-	OptionRuleBigint,
 	OptionRuleObject,
 	OptionRuleString,
 	Options,
@@ -154,12 +152,11 @@ function createMatchRegExp(arg: string | RegExp, partial?: boolean): RegExp {
 
 	const out: string[] = [];
 	let haveUnicode = false;
-        /** Flag used to indicate that the next character might be part of a spcial sequence. */
-        let specialCharFlag = 0;
-        /** Indicates that the current character is escaped. */
+
+	let specialCharFlag = 0;
 	let escapeFlag = 0;
 
-        for (let i = 0, cc = 0; i < arg.length; i++) {
+	for (let i = 0, cc = 0; i < arg.length; i++) {
                 cc = arg.charCodeAt(i);
 
                 if (specialCharFlag) {

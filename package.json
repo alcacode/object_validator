@@ -1,6 +1,6 @@
 {
   "name": "object_validator",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Provides object schema validation and normalization through the validateObject() and normalizeObject() functions.",
   "main": "./index.js",
   "directories": {
